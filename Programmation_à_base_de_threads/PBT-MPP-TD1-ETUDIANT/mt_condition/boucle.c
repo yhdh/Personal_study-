@@ -8,6 +8,7 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 int valB = 0;
+int ready = 0;
 
 
 int work(int valeur)
@@ -26,9 +27,11 @@ void * runA(void * arg)
       valA = work(valA);
     
       pthread_mutex_lock(&mutex);
-   
-      printf("*A* En attente de B\n");
-      pthread_cond_wait(&cond, &mutex);
+      
+      while (!ready) {  // ✅ Vérifie le flag dans une boucle
+         printf("*A* En attente du résultat de B\n");
+         pthread_cond_wait(&cond, &mutex);
+      }
       
       pthread_mutex_unlock(&mutex);
       
@@ -46,7 +49,10 @@ void * runB(void * arg)
       valB = work(valB);
       
       /*Signale à A que j'ai calculé valB*/
+      pthread_mutex_lock(&mutex); 
+      ready = 1; 
       pthread_cond_signal(&cond);     
+      pthread_mutex_unlock(&mutex);
       printf("*B* Valeur calculée %d \n", valB);
    }
    return NULL;
