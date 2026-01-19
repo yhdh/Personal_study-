@@ -40,9 +40,10 @@ void * runB(void * arg)
 
    while (1)
    {
+      sem_wait(&sb);
+      valB = work(valB); 
       printf("*B* Valeur calculée %d \n", valB);
       sem_post(&sa); 
-      sem_wait(&sb);
    }
    return NULL;
 }
