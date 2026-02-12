@@ -1,0 +1,17 @@
+# Compilateur
+CC      = gcc-15
+CLINKER = gcc-15
+
+# Flags OpenMP + optimisation
+CFLAGS   = -fopenmp -O2 -D$(NPART)
+OPTFLAGS = -fopenmp -O2
+
+# Bibliothèques (math)
+LIBS = -lm
+
+# Extensions
+OBJ = o
+EXE =
+
+# Utilitaires
+RM = rm -f

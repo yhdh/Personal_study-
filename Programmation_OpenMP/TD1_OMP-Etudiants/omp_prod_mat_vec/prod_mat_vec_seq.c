@@ -74,6 +74,9 @@ int is_equal(vector_t *vec1, vector_t *vec2)
     assert(vec1->N == vec2->N);
 
     nb_diff = 0;
+
+    /* Q8: Parallélisation de is_equal avec reduction(+:nb_diff) */
+#pragma omp parallel for reduction(+:nb_diff)
     for(i = 0 ; i < vec1->N ; i++)
     {
 	if (vec1->elt[i] != vec2->elt[i])
@@ -196,10 +199,32 @@ void prod_mat_vec(sparse_matrix_t *A, vector_t *X, vector_t *Y)
 
 void prod_mat_vec_par(sparse_matrix_t *A, vector_t *X, vector_t *Y)
 {
-    /*TODO A implémenter*/
+    /*
+     * Q7: Implémentation parallèle du produit matrice creuse - vecteur
+     * 
+     * Chaque ligne i de la matrice est indépendante : on peut paralléliser
+     * la boucle externe sur les lignes.
+     * 
+     * Pas de dépendances entre Y->elt[i] pour différents i.
+     */
+    assert(A->N == X->N);
+    assert(Y->N == X->N);
 
-    fprintf(stderr, "%s\n", "ERROR: prod_mat_vec_par is not implemented");
-    abort();
+    int i;
+
+#pragma omp parallel for private(i)
+    for(i = 0 ; i < A->N ; i++)
+    {
+        double accu = 0.0;
+
+        for(int k = 0 ; k < A->ncol[i] ; k++)
+        {
+            int j = A->col[i][k];
+            accu += A->elt[i][k] * X->elt[j];
+        }
+
+        Y->elt[i] = accu;
+    }
 }
 
 

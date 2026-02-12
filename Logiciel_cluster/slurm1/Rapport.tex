@@ -1,0 +1,889 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% Configuration de la page
+\geometry{margin=2.5cm}
+
+% Configuration des en-têtes et pieds de page
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{TP Slurm 1}
+\fancyhead[R]{Gestion de cluster}
+\fancyfoot[C]{\thepage}
+
+% Configuration des listings pour le code bash
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{codecomment}{RGB}{0,128,0}
+\definecolor{codekeyword}{RGB}{0,0,255}
+\definecolor{codestring}{RGB}{163,21,21}
+
+\lstdefinestyle{bash}{
+    backgroundcolor=\color{codebg},
+    frame=single,
+    framerule=0.5pt,
+    rulecolor=\color{codeframe},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    breakatwhitespace=true,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false,
+    commentstyle=\color{codecomment},
+    keywordstyle=\color{codekeyword},
+    stringstyle=\color{codestring},
+    tabsize=4,
+    xleftmargin=0.5cm,
+    xrightmargin=0.5cm,
+}
+
+\lstset{style=bash}
+
+% Configuration des titres
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% Commandes personnalisées
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\command}[1]{\texttt{\$ #1}}
+
+\begin{document}
+
+% Page de titre
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\Huge\bfseries Rapport de TP Slurm\par}
+    \vspace{1cm}
+    {\Large Gestion de cluster et ordonnancement de jobs\par}
+    \vspace{2cm}
+    {\large Yahdhih Abdelwedoud\par}
+    \vspace{1cm}
+    {\large 5 février 2026\par}
+    \vfill
+    {\large ENSIIE - Semestre 4\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Préparation et validation de l'environnement}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Q1 : Démarrage des machines virtuelles}
+
+\textbf{Objectif :} Démarrer 4 machines virtuelles avec PCOCC en utilisant le template du TP Slurm 1.
+
+\textbf{Commande exécutée :}
+\begin{lstlisting}
+pcocc alloc -c2 mycentos74-tp-slurm1:4
+\end{lstlisting}
+
+\textbf{Résultat obtenu :}
+\begin{lstlisting}
+-bash-4.2$ pcocc alloc -c2 mycentos74-tp-slurm1:4
+salloc: Granted job allocation 37993
+Configuring hosts... (done)
+\end{lstlisting}
+
+\textbf{Analyse :} Le message confirme le succès du lancement des 4 machines virtuelles avec l'allocation du job 37993.
+
+\subsection{Q2 : Suivi du démarrage de la première VM}
+
+\textbf{Objectif :} Observer l'avancement du démarrage de la première machine virtuelle.
+
+\textbf{Commande exécutée :}
+\begin{lstlisting}
+pcocc console
+\end{lstlisting}
+
+\textbf{Résultat obtenu :}
+\begin{lstlisting}
+(pcocc/37993) bash-4.2$ pcocc console
+Warning: Permanently added 'hpc06,192.168.1.26' (ECDSA) to the list of known hosts.
+
+Detaching ...
+Killed by signal 15.
+\end{lstlisting}
+
+\textbf{Analyse :} La commande a été lancée tardivement, ce qui n'a pas permis de capturer l'état de démarrage des machines virtuelles en temps réel.
+
+\subsection{Q3 : Sortie de la console avec Ctrl+C}
+
+\textbf{Objectif :} Sortir de la commande \code{pcocc console} en utilisant Ctrl+C trois fois de suite.
+
+\textbf{Résultat obtenu :}
+\begin{lstlisting}
+(pcocc/37993) bash-4.2$ pcocc console
+Warning: Permanently added 'hpc06,192.168.1.26' (ECDSA) to the list of known hosts.
+
+Detaching ...
+Killed by signal 15.
+(pcocc/37993) bash-4.2$ pcocc ssh vm0
+[yahdhih.abdelwedoud@vm0 ~]$ sinfo -l
+\end{lstlisting}
+
+\textbf{Analyse :} Après la sortie de la console, la connexion SSH à vm0 a été établie avec succès.
+
+\subsection{Q4 : Vérification de l'état du cluster}
+
+\textbf{Objectif :} Se connecter à la machine virtuelle vm0 et vérifier l'état du cluster.
+
+\textbf{Commandes exécutées :}
+\begin{lstlisting}
+pcocc ssh vm0
+sinfo -l
+\end{lstlisting}
+
+\textbf{Résultat obtenu :}
+\begin{lstlisting}
+Mon Feb  2 15:46:05 2026
+PARTITION AVAIL  TIMELIMIT   JOB_SIZE ROOT  SHARE  GROUPS  NODES  STATE NODELIST
+vm*          up   infinite 1-infinite   no     NO     all      4   idle vm[0-3]
+\end{lstlisting}
+
+\textbf{Analyse :} Le cluster est opérationnel avec 4 nœuds disponibles.
+
+\subsection{Q5 : Description du cluster}
+
+D'après la sortie de la commande \code{sinfo -l}, voici les caractéristiques du cluster :
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|p{8cm}|}
+\hline
+\textbf{Paramètre} & \textbf{Valeur} & \textbf{Description} \\
+\hline
+PARTITION & vm* & Partition par défaut (marquée *) \\
+AVAIL & up & Partition disponible \\
+TIMELIMIT & infinite & Pas de limite de temps d'exécution \\
+JOB\_SIZE & 1-infinite & Jobs de 1 à N tâches autorisés \\
+ROOT & no & Exécution en root non autorisée \\
+SHARE & NO & Allocation exclusive des ressources \\
+GROUPS & all & Tous les groupes d'utilisateurs autorisés \\
+NODES & 4 & Nombre de nœuds disponibles \\
+STATE & idle & Tous les nœuds sont libres \\
+NODELIST & vm[0-3] & Liste des nœuds : vm0, vm1, vm2, vm3 \\
+\hline
+\end{tabular}
+\caption{Caractéristiques du cluster Slurm}
+\end{table}
+
+\subsection{Q6 : Première exécution interactive}
+
+\textbf{Objectif :} Vérifier le bon fonctionnement de Slurm avec une exécution interactive.
+
+\textbf{Première tentative :}
+\begin{lstlisting}
+srun -n 4 -N 4 hostname
+\end{lstlisting}
+
+\textbf{Erreur obtenue :}
+\begin{lstlisting}
+srun: error: Unable to allocate resources: Invalid account or account/partition combination specified
+\end{lstlisting}
+
+\textbf{Résolution :} Ajout de l'utilisateur dans la base de données de comptabilité Slurm :
+\begin{lstlisting}
+sudo sacctmgr -i add user name=yahdhih.abdelwedoud cluster=ensiie account=guests fairshare=10 qos=normal,debug
+\end{lstlisting}
+
+\textbf{Résultat :}
+\begin{lstlisting}
+ Adding User(s)
+  yahdhih.abdelwedoud
+ Settings =
+  Default Account = (null)
+ Associations =
+  U = yahdhih.a A = guests     C = ensiie
+ Non Default Settings
+  Fairshare     = 10
+  QOS           = debug,normal
+\end{lstlisting}
+
+\textbf{Analyse :} L'utilisateur a été ajouté avec succès au compte \code{guests} avec les QoS \code{normal} et \code{debug}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Premier script batch}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Q1 : Créer un premier script affichant le nom du nœud}
+
+Le script \code{script-1.sh} contient la commande \code{hostname} et retourne un code 0.
+
+\begin{lstlisting}
+#!/bin/bash
+hostname
+exit 0
+\end{lstlisting}
+
+Exécution locale (sans Slurm) :
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ chmod +x script-1.sh
+[yahdhih.abdelwedoud@vm0 ~]$ ./script-1.sh
+vm0
+\end{lstlisting}
+
+\subsection{Q2 : Exécuter avec sbatch et analyser avec sacct}
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch ./script-1.sh
+Submitted batch job 57
+[yahdhih.abdelwedoud@vm0 ~]$ sacct -j 57
+    JobID    JobName  Partition    Account  AllocCPUS      State ExitCode
+------------ ---------- ---------- ---------- ---------- ---------- --------
+57           script-1.+         vm     guests          1  COMPLETED      0:0
+57.batch          batch                guests          1  COMPLETED      0:0
+\end{lstlisting}
+
+Le job 57 s'est exécuté avec succès (State = COMPLETED, ExitCode = 0:0).
+
+\subsection{Q3 : Modifier le script pour obtenir un état FAILED}
+
+Pour obtenir un état FAILED, il suffit de retourner un code différent de 0 (par exemple \code{exit 1}).
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch ./script-1.sh
+Submitted batch job 60
+[yahdhih.abdelwedoud@vm0 ~]$ sacct -j 60
+    JobID    JobName  Partition    Account  AllocCPUS      State ExitCode
+------------ ---------- ---------- ---------- ---------- ---------- --------
+60           script-1.+         vm     guests          1     FAILED      1:0
+60.batch          batch                guests          1     FAILED      1:0
+\end{lstlisting}
+
+Le job 60 a échoué avec ExitCode = 1:0.
+
+\subsection{Q4 : Demander l'allocation de 4 tâches}
+
+Après avoir remis le script avec \code{exit 0}, on demande 4 tâches avec \code{-n 4} :
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -n 4 script-1.sh
+Submitted batch job 61
+[yahdhih.abdelwedoud@vm0 ~]$ sacct -j 61
+    JobID    JobName  Partition    Account  AllocCPUS      State ExitCode
+------------ ---------- ---------- ---------- ---------- ---------- --------
+61           script-1.+         vm     guests          4  COMPLETED      0:0
+61.batch          batch                guests          2  COMPLETED      0:0
+\end{lstlisting}
+
+\textbf{Différence au niveau de l'accounting :}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Job} & \textbf{AllocCPUS (job)} & \textbf{AllocCPUS (batch)} \\
+\hline
+57 (1 tâche) & 1 & 1 \\
+61 (4 tâches) & 4 & 2 \\
+\hline
+\end{tabular}
+\caption{Comparaison de l'allocation CPU}
+\end{table}
+
+Avec \code{-n 4}, Slurm alloue \textbf{4 CPUs} au job global, mais le script batch lui-même n'utilise que \textbf{2 CPUs} (sur un seul nœud). Les 4 CPUs sont réservés pour d'éventuelles sous-tâches (srun).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Intégration de « step » parallèles}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+L'exécution d'un script batch demandant l'allocation de plusieurs cœurs nécessite le lancement d'un « jobstep » afin de pouvoir les utiliser en parallèle. Le lancement d'un step se fait par l'intermédiaire d'une commande \code{srun} intégrée dans le script batch.
+
+\subsection{Q1 : Intégrer l'exécution d'un step affichant le nom des machines}
+
+\textbf{Script \code{sript-1-2.sh} :}
+\begin{lstlisting}
+#!/bin/bash
+srun hostname
+exit 0
+\end{lstlisting}
+
+\textbf{Exécution avec sbatch :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -n 4 sript-1-2.sh
+Submitted batch job 58
+\end{lstlisting}
+
+\textbf{Contenu du fichier de sortie \code{slurm-58.out} :}
+\begin{lstlisting}
+vm0
+vm0
+vm1
+vm1
+\end{lstlisting}
+
+\textbf{Données d'accounting :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sacct -j 58 -o jobid,jobname,nodelist,alloccpus,state
+       JobID    JobName        NodeList  AllocCPUS      State 
+------------ ---------- --------------- ---------- ---------- 
+58           sript-1-2+         vm[0-1]          4  COMPLETED 
+58.batch          batch             vm0          2  COMPLETED 
+58.0           hostname         vm[0-1]          4  COMPLETED 
+\end{lstlisting}
+
+\textbf{Commentaires sur nodelist et alloccpus :}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|c|p{7cm}|}
+\hline
+\textbf{Step} & \textbf{NodeList} & \textbf{AllocCPUS} & \textbf{Explication} \\
+\hline
+58 (job global) & vm[0-1] & 4 & Le job utilise 2 nœuds avec 4 CPUs au total \\
+58.batch & vm0 & 2 & Le script batch s'exécute sur vm0 avec 2 CPUs \\
+58.0 (hostname) & vm[0-1] & 4 & Le step utilise les 4 CPUs sur les 2 nœuds \\
+\hline
+\end{tabular}
+\caption{Répartition des ressources par step}
+\end{table}
+
+\subsection{Q2 : Ajouter un second step avec sleep 120}
+
+\textbf{Script \code{script-2.2.sh} :}
+\begin{lstlisting}
+#!/bin/bash
+srun hostname
+srun sleep 120
+exit 0
+\end{lstlisting}
+
+\textbf{Suivi avec squeue :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ squeue -s -j 61
+         STEPID     NAME PARTITION     USER      TIME NODELIST
+           61.1    sleep        vm yahdhih.      0:19 vm[0-1]
+\end{lstlisting}
+
+\textbf{Données d'accounting après terminaison :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sacct -j 61 -o jobid,jobname,nodelist,alloccpus,state,end,elapsed
+       JobID    JobName        NodeList  AllocCPUS      State          End    Elapsed 
+------------ ---------- --------------- ---------- ---------- ------------ ---------- 
+61           script-2.+         vm[0-1]          4  COMPLETED 2026-02-02   00:02:01 
+61.batch          batch             vm0          2  COMPLETED 2026-02-02   00:02:01 
+61.0           hostname         vm[0-1]          4  COMPLETED 2026-02-02   00:00:01 
+61.1              sleep         vm[0-1]          4  COMPLETED 2026-02-02   00:02:00 
+\end{lstlisting}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|p{8cm}|}
+\hline
+\textbf{Step} & \textbf{Elapsed} & \textbf{Explication} \\
+\hline
+61 (job global) & 00:02:01 & Durée totale du job \\
+61.batch & 00:02:01 & Le batch attend la fin de tous les steps \\
+61.0 (hostname) & 00:00:01 & Exécution instantanée \\
+61.1 (sleep) & 00:02:00 & 120 secondes comme prévu \\
+\hline
+\end{tabular}
+\caption{Durée d'exécution par step}
+\end{table}
+
+\subsection{Q3 : Boucle de 3 steps avec annulation (scancel)}
+
+\textbf{Script \code{script-2.3.sh} :}
+\begin{lstlisting}
+#!/bin/bash
+for i in 1 2 3; do
+    srun sleep 120
+done
+exit 0
+\end{lstlisting}
+
+\textbf{Annulation du premier step :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ scancel 62.0
+\end{lstlisting}
+
+\textbf{État final après annulation complète :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sacct -j 62 -o jobid,user,jobname%15,state%20,elapsed,exit
+       JobID      User         JobName                State    Elapsed ExitCode 
+------------ --------- --------------- -------------------- ---------- -------- 
+62           yahdhih.+   script-2.3.sh    CANCELLED by 1003   00:05:02      0:0 
+62.batch                         batch            CANCELLED   00:05:03     0:15 
+62.0                             sleep    CANCELLED by 1003   00:01:40      0:9 
+62.1                             sleep            COMPLETED   00:02:00      0:0 
+62.2                             sleep            CANCELLED   00:01:22     0:15 
+\end{lstlisting}
+
+\textbf{Explication de la sortie de sacct :}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|c|p{6cm}|}
+\hline
+\textbf{Step} & \textbf{State} & \textbf{ExitCode} & \textbf{Explication} \\
+\hline
+62 (job) & CANCELLED by 1003 & 0:0 & Job annulé par l'utilisateur (UID 1003) \\
+62.batch & CANCELLED & 0:15 & Script batch interrompu (signal 15 = SIGTERM) \\
+62.0 & CANCELLED by 1003 & 0:9 & Premier step annulé manuellement (signal 9 = SIGKILL) \\
+62.1 & COMPLETED & 0:0 & Deuxième step terminé normalement \\
+62.2 & CANCELLED & 0:15 & Troisième step interrompu \\
+\hline
+\end{tabular}
+\caption{États des steps après annulation}
+\end{table}
+
+\textbf{Observations :}
+\begin{itemize}
+    \item \code{scancel 62.0} annule uniquement le step spécifié, le job continue avec les steps suivants
+    \item \code{scancel 62} annule le job complet et tous les steps en cours
+    \item L'ExitCode \code{0:15} indique une terminaison par signal SIGTERM (15)
+    \item L'ExitCode \code{0:9} indique une terminaison par signal SIGKILL (9)
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Utilisation des QOS}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+L'objectif est de comprendre le comportement des politiques d'ordonnancement en utilisant différentes QOS pour favoriser le démarrage de certains jobs.
+
+\subsection{Q1 : Vérification du service slurmdbd et description des QOS}
+
+\textbf{Vérification du service slurmdbd :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ systemctl status slurmdbd
+slurmdbd.service - Slurm DBD accounting daemon
+   Loaded: loaded (/usr/lib/systemd/system/slurmdbd.service)
+   Active: active (running) since lun. 2026-02-02 22:34:17 UTC
+\end{lstlisting}
+
+\textbf{Affichage des QOS disponibles :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sacctmgr show qos
+      Name   Priority  GraceTime    Preempt PreemptMode  MaxWall MaxJobsPU
+---------- ---------- ---------- ---------- ----------- -------- ---------
+    normal          0   00:00:00            cluster                    
+     debug         10   00:00:00            cluster     00:05:00        1
+\end{lstlisting}
+
+\textbf{Comparaison des deux QOS :}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Propriété} & \textbf{normal} & \textbf{debug} \\
+\hline
+Priority & 0 & 10 \\
+GraceTime & 00:00:00 & 00:00:00 \\
+PreemptMode & cluster & cluster \\
+UsageFactor & 1.0 & 1.0 \\
+MaxWall & illimité & 00:05:00 (5 minutes) \\
+MaxJobsPU & illimité & 1 \\
+\hline
+\end{tabular}
+\caption{Comparaison des QOS normal et debug}
+\end{table}
+
+\textbf{Différences principales :}
+\begin{enumerate}
+    \item \textbf{Priority} : \code{debug} a une priorité de 10 contre 0 pour \code{normal}
+    \item \textbf{MaxWall} : Les jobs \code{debug} sont limités à 5 minutes
+    \item \textbf{MaxJobsPU} : Un seul job actif avec la QOS \code{debug} par utilisateur
+\end{enumerate}
+
+\subsection{Q2 : Lancement avec allocation exclusive et QOS debug}
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -n4 -N4 --exclusive script-2.2.sh
+Submitted batch job 64
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -n4 -N4 --exclusive script-2.2.sh
+Submitted batch job 65
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -n4 -N4 --exclusive --qos debug script-2.2.sh
+Submitted batch job 66
+\end{lstlisting}
+
+La QOS \code{debug} ayant une priorité plus élevée (10 vs 0), les jobs debug seront favorisés dès que les ressources se libèrent.
+
+\subsection{Q3 : Lancement sans allocation exclusive}
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ squeue -O jobid,state,qos,timeused,reason
+JOBID     STATE     QOS      TIME     REASON              
+64        PENDING   normal   0:00     Resources           
+65        PENDING   normal   0:00     Resources           
+68        PENDING   normal   0:00     Priority            
+69        PENDING   normal   0:00     Priority            
+63        RUNNING   normal   4:53     None                
+\end{lstlisting}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{REASON} & \textbf{Signification} \\
+\hline
+Resources & Le job attend que des ressources se libèrent \\
+Priority & Le job attend car d'autres jobs ont une priorité plus élevée \\
+None & Le job est en cours d'exécution \\
+\hline
+\end{tabular}
+\caption{Signification des raisons d'attente}
+\end{table}
+
+\subsection{Q4 : Lancement avec QOS debug}
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -n4 -N4 --qos debug script-2.2.sh
+Submitted batch job 71
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -n4 -N4 --qos debug script-2.2.sh
+Submitted batch job 72
+\end{lstlisting}
+
+\textbf{Constatations :}
+\begin{enumerate}
+    \item Les jobs debug apparaissent en tête de la file d'attente grâce à leur priorité plus élevée
+    \item Le job 72 attend avec REASON = Priority à cause de MaxJobsPU = 1
+    \item Le job 71 attend les Resources et sera le prochain à démarrer
+\end{enumerate}
+
+\textbf{Conclusion :} La QOS \code{debug} est conçue pour des tests rapides :
+\begin{itemize}
+    \item \textbf{Avantage :} Priorité élevée pour un démarrage rapide
+    \item \textbf{Contraintes :} Durée limitée (5 min) et un seul job à la fois par utilisateur
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Comportements aux limites}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+L'idée est de constater le comportement de Slurm lorsqu'un job batch ne se comporte pas de la façon attendue ou que le système lui-même introduit des problèmes.
+
+\subsection{Q1 : Limite de temps d'exécution (time limit)}
+
+\textbf{Test avec un script dépassant la limite de temps :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -t 1 script-2.3.sh
+Submitted batch job 74
+[yahdhih.abdelwedoud@vm0 ~]$ sacct -j 74 -o jobid,user,jobname%15,state,elapsed
+       JobID      User         JobName      State    Elapsed 
+------------ --------- --------------- ---------- ---------- 
+74           yahdhih.+   script-2.3.sh    TIMEOUT   00:01:04 
+74.batch                         batch  CANCELLED   00:01:05 
+74.0                             sleep  CANCELLED   00:01:04 
+\end{lstlisting}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|c|p{6cm}|}
+\hline
+\textbf{Step} & \textbf{State} & \textbf{Elapsed} & \textbf{Explication} \\
+\hline
+74 (job) & TIMEOUT & 00:01:04 & Le job a dépassé la limite de temps \\
+74.batch & CANCELLED & 00:01:05 & Le batch a été annulé suite au timeout \\
+74.0 (sleep) & CANCELLED & 00:01:04 & Le step en cours a été annulé \\
+\hline
+\end{tabular}
+\caption{États après dépassement du temps limite}
+\end{table}
+
+\textbf{Réponses :}
+\begin{itemize}
+    \item \textbf{State associé au job :} \code{TIMEOUT}
+    \item \textbf{Nombre de steps exécutés :} 1 seul step a été lancé avant le timeout
+\end{itemize}
+
+\subsection{Q2 : Limite de mémoire par CPU}
+
+\textbf{Script \code{gen100Mo.sh} :}
+\begin{lstlisting}
+#!/bin/bash
+srun dd if=/dev/zero of=/dev/shm/128Mo bs=1M count=128
+sleep 30
+rm /dev/shm/128Mo
+exit 0
+\end{lstlisting}
+
+\textbf{Lancement avec limite de mémoire :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch --mem-per-cpu=100 -n1 gen100Mo.sh
+Submitted batch job 76
+[yahdhih.abdelwedoud@vm0 ~]$ sacct -j 76 -o jobid,user,jobname%15,state,elapsed,exit
+       JobID      User         JobName      State    Elapsed ExitCode 
+------------ --------- --------------- ---------- ---------- -------- 
+76           yahdhih.+     gen100Mo.sh  COMPLETED   00:00:30      0:0 
+76.batch                         batch  COMPLETED   00:00:30      0:0 
+76.0                                dd  CANCELLED   00:00:00      0:9 
+\end{lstlisting}
+
+\textbf{Explication :}
+\begin{enumerate}
+    \item Le step \code{dd} a été annulé (CANCELLED) avec ExitCode \code{0:9} car il a tenté d'allouer 128Mo alors que la limite était de 100Mo
+    \item Le signal 9 (SIGKILL) indique que Slurm a forcé la terminaison du processus
+\end{enumerate}
+
+\subsection{Q3 : Défaillance d'un nœud (NODE\_FAIL)}
+
+\textbf{Reboot du nœud vm1 pendant l'exécution :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sudo ssh vm1 reboot
+Connection to vm1 closed by remote host.
+\end{lstlisting}
+
+\textbf{État final du job :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sacct -j 77 -o jobid,user,jobname%15,state,elapsed,exit
+       JobID      User         JobName      State    Elapsed ExitCode 
+------------ --------- --------------- ---------- ---------- -------- 
+77           yahdhih.+   script-2.3.sh  NODE_FAIL   00:03:48      1:0 
+77.batch                         batch  CANCELLED   00:03:49     0:15 
+77.0                             sleep  COMPLETED   00:01:30      0:0 
+77.1                             sleep  COMPLETED   00:01:30      0:0 
+77.2                             sleep  NODE_FAIL   00:00:47      0:0 
+\end{lstlisting}
+
+\textbf{Conclusion :} Slurm gère les défaillances de nœuds en marquant les jobs affectés avec l'état \code{NODE\_FAIL} et en mettant les nœuds défaillants en état \code{down}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Gestion des nœuds}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+L'état actuel du cluster n'est pas complètement opérationnel. Le reboot de vm1 a changé son état et ne le rend plus éligible à l'allocation.
+
+\subsection{Q1 : Lancement d'un script nécessitant 4 nœuds exclusivement}
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -n4 -N4 --exclusive script-2.3.sh
+Submitted batch job 58
+[yahdhih.abdelwedoud@vm0 ~]$ squeue
+    JOBID PARTITION   NAME     USER ST   TIME  NODES NODELIST(REASON)
+       58        vm script-2 yahdhih. PD   0:00      4 (Resources)
+\end{lstlisting}
+
+\textbf{Constatation :} Le job est en attente (\textbf{PENDING}) avec la raison \textbf{Resources} car vm1 est down.
+
+\subsection{Q2 : Remise en production du nœud vm1}
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sudo scontrol update nodename=vm1 state=idle
+[yahdhih.abdelwedoud@vm0 ~]$ sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+vm*          up   infinite      4  alloc vm[0-3]
+\end{lstlisting}
+
+Le job 58 passe automatiquement en exécution (\textbf{RUNNING}) sur les 4 nœuds.
+
+\subsection{Q3 : Utilisation de l'option --requeue}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|p{5cm}|p{5cm}|}
+\hline
+\textbf{Aspect} & \textbf{Sans --requeue} & \textbf{Avec --requeue} \\
+\hline
+État après NODE\_FAIL & Job terminé avec NODE\_FAIL & Job remis en file d'attente (PENDING) \\
+Après remise en prod & Job reste NODE\_FAIL & Job reprend l'exécution \\
+Comportement & Le job est définitivement échoué & Le job est automatiquement relancé \\
+\hline
+\end{tabular}
+\caption{Comparaison avec et sans --requeue}
+\end{table}
+
+\subsection{Q4 : Exclusivité et nœud drainé}
+
+Un nœud drainé finit les tâches qui lui sont actuellement attribuées, puis se met hors service.
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sudo scontrol update node=vm1 state=drain reason="drainage"
+[yahdhih.abdelwedoud@vm0 ~]$ sinfo
+PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+vm*          up   infinite      1   drng vm1
+vm*          up   infinite      3  alloc vm[0,2-3]
+\end{lstlisting}
+
+Le nœud vm1 passe de "drng" (draining) à "drain" (drainé) une fois le job terminé.
+
+\subsection{Q5 : Passage d'un nœud en état "down"}
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sudo scontrol update node=vm1 state=down reason="down"
+[yahdhih.abdelwedoud@vm0 ~]$ sacct -j 62
+       JobID    JobName  Partition    Account  AllocCPUS      State ExitCode 
+------------ ---------- ---------- ---------- ---------- ---------- -------- 
+62           script-2.+         vm     guests          4  NODE_FAIL      1:0 
+\end{lstlisting}
+
+Le job 62 est immédiatement terminé avec l'état \textbf{NODE\_FAIL}.
+
+\subsection{Q6 : Différence entre "drain" et "down"}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|p{5cm}|p{5cm}|}
+\hline
+\textbf{Aspect} & \textbf{drain} & \textbf{down} \\
+\hline
+Jobs en cours & Continuent jusqu'à leur fin & Interrompus immédiatement \\
+Nouveaux jobs & Non acceptés & Non acceptés \\
+État du job affecté & COMPLETED (termine normalement) & NODE\_FAIL (échec) \\
+Transition d'état & idle → drng → drain & idle → down \\
+Usage typique & Maintenance planifiée & Panne ou urgence \\
+\hline
+\end{tabular}
+\caption{Comparaison drain vs down}
+\end{table}
+
+\textbf{Pour remettre un nœud en production :}
+\begin{lstlisting}
+sudo scontrol update node=<nom_noeud> state=resume
+# ou
+sudo scontrol update nodename=<nom_noeud> state=idle
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Test du Backfilling}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Le cluster est pleinement opérationnel. Cette partie illustre le fonctionnement du « backfilling » - une technique d'ordonnancement où des jobs de moindre priorité peuvent passer avant des jobs prioritaires s'ils peuvent se terminer avant que les ressources ne soient disponibles pour le job prioritaire.
+
+\textbf{Scripts utilisés :}
+\begin{itemize}
+    \item \textbf{bkf-1.sh} : Utilise une partie des ressources (2 nœuds) pour une période longue
+    \item \textbf{bkf-2.sh} : Nécessite l'intégralité des ressources (4 nœuds exclusifs) avec grande priorité
+    \item \textbf{bkf-3.sh} : Moins prioritaire, durée longue (non backfillable)
+    \item \textbf{bkf-4.sh} : Moins prioritaire, durée courte (backfillable)
+\end{itemize}
+
+\subsection{Q1 : Mise en place du scénario de backfilling}
+
+\textbf{Lancement des 4 jobs :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -t 2 -n2 -N2 bkf-1.sh ; \
+  sbatch -t 3 -n4 -N4 --exclusive --nice=50 bkf-2.sh ; \
+  sbatch -t 4 -n2 -N2 --nice=100 bkf-3.sh ; \
+  sbatch -t 1 -n1 -N1 --nice=100 bkf-4.sh 
+Submitted batch job 69
+Submitted batch job 70
+Submitted batch job 71
+Submitted batch job 72
+\end{lstlisting}
+
+\textbf{Configuration des jobs :}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|l|c|c|c|l|}
+\hline
+\textbf{Job ID} & \textbf{Script} & \textbf{Nœuds} & \textbf{Temps max} & \textbf{Nice} & \textbf{Priorité} \\
+\hline
+69 & bkf-1.sh & 2 (-N2) & 2 min & 0 (défaut) & Haute \\
+70 & bkf-2.sh & 4 (--exclusive) & 3 min & 50 & Moyenne \\
+71 & bkf-3.sh & 2 (-N2) & 4 min & 100 & Basse \\
+72 & bkf-4.sh & 1 (-N1) & 1 min & 100 & Basse \\
+\hline
+\end{tabular}
+\caption{Configuration des jobs pour le backfilling}
+\end{table}
+
+\textbf{Note :} Plus la valeur de \code{--nice} est élevée, plus la priorité est basse.
+
+\textbf{Observation du backfilling :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ squeue -O jobid,qos,timeused,state,reason,nodelist,priority
+JOBID   QOS      TIME   STATE     REASON     NODELIST   PRIORITY            
+70      normal   0:00   PENDING   Resources             0.00001782574691    
+71      normal   0:08   RUNNING   None       vm[2-3]    0.00001781410538    
+\end{lstlisting}
+
+\textbf{Le job 71 (priorité basse) s'exécute AVANT le job 70 (priorité plus haute) !}
+
+C'est le backfilling en action :
+\begin{enumerate}
+    \item Le job 70 nécessite 4 nœuds exclusivement → il doit attendre que TOUS les nœuds soient libres
+    \item Le job 71 ne nécessite que 2 nœuds → il peut utiliser les nœuds libérés par d'autres jobs
+    \item Slurm calcule que le job 71 peut se terminer AVANT que les 4 nœuds ne soient disponibles pour le job 70
+    \item Donc le job 71 est « backfillé » → il passe avant le job 70 sans retarder ce dernier
+\end{enumerate}
+
+\subsection{Q2 : Annulation du premier job - Limitation du backfilling}
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ scancel 73
+[yahdhih.abdelwedoud@vm0 ~]$ squeue -O jobid,qos,timeused,state,reason,nodelist,priority
+JOBID   QOS      TIME   STATE     REASON     NODELIST   PRIORITY            
+74      normal   0:00   PENDING   Resources             0.00001782481559    
+75      normal   0:35   RUNNING   None       vm[2-3]    0.00001781317406    
+76      normal   0:35   RUNNING   None       vm0        0.00001781317406    
+\end{lstlisting}
+
+\textbf{Observation critique :} Le job 74 (priorité plus haute) est \textbf{toujours en attente} alors que les jobs 75 et 76 (priorité plus basse) continuent de s'exécuter !
+
+\textbf{Conclusion sur les limitations du backfilling :}
+\begin{enumerate}
+    \item \textbf{Pas de préemption :} Une fois qu'un job est backfillé et en cours d'exécution, il ne peut pas être interrompu
+    \item \textbf{Décision irrévocable :} Les décisions de backfilling sont prises au moment de l'ordonnancement
+    \item \textbf{Inversion de priorité :} En cas de changement de contexte, des jobs de basse priorité peuvent bloquer des jobs de haute priorité
+\end{enumerate}
+
+\subsection{Q3 : Sans temps d'allocation - Besoins du backfilling}
+
+\textbf{Lancement sans limites de temps :}
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ sbatch -n2 -N2 bkf-1.sh ; \
+  sbatch -n4 -N4 --exclusive bkf-2.sh ; \
+  sbatch -n2 -N2 bkf-3.sh ; \
+  sbatch -n1 -N1 bkf-4.sh 
+Submitted batch job 77
+Submitted batch job 78
+Submitted batch job 79
+Submitted batch job 80
+\end{lstlisting}
+
+\textbf{Note :} Pas d'option \code{-t} (temps), pas de \code{--nice} (même priorité pour tous).
+
+\begin{lstlisting}
+[yahdhih.abdelwedoud@vm0 ~]$ squeue -O jobid,qos,timeused,state,reason,nodelist,priority
+JOBID   QOS      TIME   STATE     REASON     NODELIST   PRIORITY            
+78      normal   0:00   PENDING   Resources             0.00001783645712    
+77      normal   1:47   RUNNING   None       vm[2-3]    0.00001783645712    
+79      normal   1:47   RUNNING   None       vm[2-3]    0.00001783645712    
+\end{lstlisting}
+
+\textbf{Analyse : Pourquoi pas de backfilling ?}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{6cm}|p{6cm}|}
+\hline
+\textbf{Avec -t (temps spécifié)} & \textbf{Sans -t} \\
+\hline
+Slurm connaît la durée maximale des jobs & Durée = UNLIMITED \\
+Peut calculer quand les ressources seront libres & Impossible de prédire la fin des jobs \\
+Peut décider si un job peut être backfillé & Aucun backfilling possible \\
+\hline
+\end{tabular}
+\caption{Impact du temps sur le backfilling}
+\end{table}
+
+\textbf{Besoins du backfilling :}
+\begin{enumerate}
+    \item \textbf{TimeLimit défini :} L'option \code{-t} ou \code{--time} doit être spécifiée
+    \item \textbf{Différences de priorité :} Les jobs doivent avoir des priorités différentes
+    \item \textbf{Ressources partielles :} Le job à backfiller doit nécessiter moins de ressources
+\end{enumerate}
+
+\textbf{Conclusion :} Sans spécification de temps (\code{-t}), Slurm ne peut pas prédire quand les jobs en cours se termineront, donc le backfilling est \textbf{désactivé} par sécurité.
+
+\textbf{Recommandation :} Toujours spécifier un temps maximum avec \code{-t} ou \code{--time} pour permettre un ordonnancement optimal avec backfilling.
+
+\end{document}
