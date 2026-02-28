@@ -1,0 +1,14 @@
+test_scheduler_unit_cond_broadcast_scheduler_fifo 3 0.000771032
+test_scheduler_unit_cond_broadcast_scheduler_fifo_class 3 0.000458738
+test_scheduler_unit_cond_destroy_scheduler_fifo 3 0.00317243
+test_scheduler_unit_cond_destroy_scheduler_fifo_class 3 0.00465901
+test_scheduler_unit_cond_init_scheduler_fifo 3 0.00037946
+test_scheduler_unit_cond_init_scheduler_fifo_class 3 0.00354225
+test_scheduler_unit_cond_mt_scheduler_fifo 2 2.00188
+test_scheduler_unit_cond_mt_scheduler_fifo_class 2 2.00307
+test_scheduler_unit_cond_signal_scheduler_fifo 3 0.000689004
+test_scheduler_unit_cond_signal_scheduler_fifo_class 3 0.000305141
+test_scheduler_unit_cond_wait_scheduler_fifo 3 0.000335252
+test_scheduler_unit_cond_wait_scheduler_fifo_class 3 0.000406127
+example_cond 1 3.00387
+---

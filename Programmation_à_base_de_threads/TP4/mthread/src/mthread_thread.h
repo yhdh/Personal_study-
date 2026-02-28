@@ -24,6 +24,7 @@ typedef struct mthread_thread_s {
   ucontext_t uc{};
   void *res = nullptr;
   mthread_attr_t attr;
+  void *tls_values[MTHREAD_KEYS_MAX] = {};
 } mthread_thread_t;
 
 void print_thread_status(mthread_thread_t *th, mthread_thread_t *idle);

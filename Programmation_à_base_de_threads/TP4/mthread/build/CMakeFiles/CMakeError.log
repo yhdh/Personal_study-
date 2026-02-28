@@ -1,0 +1,23 @@
+Determining if files valgrind/valgrind.h exist failed with the following output:
+Change Dir: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/CMakeFiles/CMakeScratch/TryCompile-4RNmHf
+
+Run Build Command(s):/usr/bin/gmake -f Makefile cmTC_8ce2c/fast && /usr/bin/gmake  -f CMakeFiles/cmTC_8ce2c.dir/build.make CMakeFiles/cmTC_8ce2c.dir/build
+gmake[1] : on entre dans le répertoire « /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/CMakeFiles/CMakeScratch/TryCompile-4RNmHf »
+Building C object CMakeFiles/cmTC_8ce2c.dir/MTHREAD_USE_VALGRIND.c.o
+/usr/bin/cc   -std=gnu11 -o CMakeFiles/cmTC_8ce2c.dir/MTHREAD_USE_VALGRIND.c.o -c /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/CMakeFiles/CMakeScratch/TryCompile-4RNmHf/MTHREAD_USE_VALGRIND.c
+/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/CMakeFiles/CMakeScratch/TryCompile-4RNmHf/MTHREAD_USE_VALGRIND.c:2:10: fatal error: valgrind/valgrind.h: Aucun fichier ou dossier de ce type
+    2 | #include <valgrind/valgrind.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+gmake[1]: *** [CMakeFiles/cmTC_8ce2c.dir/build.make:78 : CMakeFiles/cmTC_8ce2c.dir/MTHREAD_USE_VALGRIND.c.o] Erreur 1
+gmake[1] : on quitte le répertoire « /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/CMakeFiles/CMakeScratch/TryCompile-4RNmHf »
+gmake: *** [Makefile:127 : cmTC_8ce2c/fast] Erreur 2
+
+
+Source:
+/* */
+#include <valgrind/valgrind.h>
+
+
+int main(void){return 0;}
+

@@ -1,0 +1,325 @@
+Start testing: Feb 28 19:49 CET
+----------------------------------------------------------
+19/304 Testing: test_scheduler_unit_cond_broadcast_scheduler_fifo
+19/304 Test: test_scheduler_unit_cond_broadcast_scheduler_fifo
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_broadcast_scheduler_fifo"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_broadcast_scheduler_fifo" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_scheduler_s<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaaafe9a4a0 (Binding   0) MAIN            INFO:] Init with 1 vps and 1 threads
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_broadcast_scheduler_fifo" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_broadcast_scheduler_fifo" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/304 Testing: test_scheduler_unit_cond_broadcast_scheduler_fifo_class
+20/304 Test: test_scheduler_unit_cond_broadcast_scheduler_fifo_class
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_broadcast_scheduler_fifo_class"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_broadcast_scheduler_fifo_class" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_class_scheduler_t<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaaec0e7480 (Binding   0) MAIN            INFO:] Init with 1 vps and 1 threads
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_broadcast_scheduler_fifo_class" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_broadcast_scheduler_fifo_class" time elapsed: 00:00:00
+----------------------------------------------------------
+
+21/304 Testing: test_scheduler_unit_cond_destroy_scheduler_fifo
+21/304 Test: test_scheduler_unit_cond_destroy_scheduler_fifo
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_destroy_scheduler_fifo"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_destroy_scheduler_fifo" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_scheduler_s<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaae5d16760 (Binding   0) MAIN            INFO:] Init with 3 vps and 3 threads
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_destroy_scheduler_fifo" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_destroy_scheduler_fifo" time elapsed: 00:00:00
+----------------------------------------------------------
+
+22/304 Testing: test_scheduler_unit_cond_destroy_scheduler_fifo_class
+22/304 Test: test_scheduler_unit_cond_destroy_scheduler_fifo_class
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_destroy_scheduler_fifo_class"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_destroy_scheduler_fifo_class" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_class_scheduler_t<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaab1139e740 (Binding   0) MAIN            INFO:] Init with 3 vps and 3 threads
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_destroy_scheduler_fifo_class" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_destroy_scheduler_fifo_class" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/304 Testing: test_scheduler_unit_cond_init_scheduler_fifo
+23/304 Test: test_scheduler_unit_cond_init_scheduler_fifo
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_init_scheduler_fifo"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_init_scheduler_fifo" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_scheduler_s<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaafd2bd4a0 (Binding   0) MAIN            INFO:] Init with 1 vps and 1 threads
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_init_scheduler_fifo" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_init_scheduler_fifo" time elapsed: 00:00:00
+----------------------------------------------------------
+
+24/304 Testing: test_scheduler_unit_cond_init_scheduler_fifo_class
+24/304 Test: test_scheduler_unit_cond_init_scheduler_fifo_class
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_init_scheduler_fifo_class"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_init_scheduler_fifo_class" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_class_scheduler_t<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaac55fd480 (Binding   0) MAIN            INFO:] Init with 1 vps and 1 threads
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_init_scheduler_fifo_class" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_init_scheduler_fifo_class" time elapsed: 00:00:00
+----------------------------------------------------------
+
+25/304 Testing: test_scheduler_unit_cond_mt_scheduler_fifo
+25/304 Test: test_scheduler_unit_cond_mt_scheduler_fifo
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_mt_scheduler_fifo"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_mt_scheduler_fifo" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_scheduler_s<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaadb835600 (Binding   0) MAIN            INFO:] Init with 2 vps and 5 threads
+[LWP 00 Thread 0xaaaadb83fcc0 (Binding   0) MUTEX           INFO:] Lock 0xaaaadb83fcc0 hold 0xaaaabe5000c0
+[LWP 00 Thread 0xaaaadb83fcc0 (Binding   0) TEST            INFO:] WAIT
+[LWP 00 Thread 0xaaaadb849340 (Binding   0) MUTEX           INFO:] Lock 0xaaaadb849340 hold 0xaaaabe5000c0
+[LWP 00 Thread 0xaaaadb849340 (Binding   0) TEST            INFO:] WAIT
+[LWP 00 Thread 0xaaaadb849340 (Binding   0) SCHED           INFO:] Remove blocked thread 0xaaaadb83fcc0
+[LWP 00 Thread 0xaaaadb8529c0 (Binding   0) MUTEX           INFO:] Lock 0xaaaadb8529c0 hold 0xaaaabe5000c0
+[LWP 00 Thread 0xaaaadb8529c0 (Binding   0) TEST            INFO:] WAIT
+[LWP 00 Thread 0xaaaadb8529c0 (Binding   0) SCHED           INFO:] Remove blocked thread 0xaaaadb849340
+[LWP 00 Thread 0xaaaadb85c020 (Binding   0) MUTEX           INFO:] Lock 0xaaaadb85c020 hold 0xaaaabe5000c0
+[LWP 00 Thread 0xaaaadb85c020 (Binding   0) TEST            INFO:] SIGNAL
+[LWP 00 Thread 0xaaaadb85c020 (Binding   0) SCHED           INFO:] Wait to reinsert blocked thread 0xaaaadb83fcc0
+[LWP 00 Thread 0xaaaadb85c020 (Binding   0) SCHED           INFO:] Reinsert blocked thread 0xaaaadb83fcc0
+[LWP 00 Thread 0xaaaadb83fcc0 (Binding   0) MUTEX           INFO:] Lock 0xaaaadb83fcc0 hold 0xaaaabe5000c0
+[LWP 00 Thread 0xaaaadb83fcc0 (Binding   0) SCHED           INFO:] Remove blocked thread 0xaaaadb8529c0
+[LWP 00 Thread 0xaaaadb8656a0 (Binding   0) MUTEX           INFO:] Lock 0xaaaadb8656a0 hold 0xaaaabe5000c0
+[LWP 00 Thread 0xaaaadb8656a0 (Binding   0) TEST            INFO:] BROADCAST
+[LWP 00 Thread 0xaaaadb8656a0 (Binding   0) SCHED           INFO:] Wait to reinsert blocked thread 0xaaaadb849340
+[LWP 00 Thread 0xaaaadb8656a0 (Binding   0) SCHED           INFO:] Reinsert blocked thread 0xaaaadb849340
+[LWP 00 Thread 0xaaaadb8656a0 (Binding   0) SCHED           INFO:] Wait to reinsert blocked thread 0xaaaadb8529c0
+[LWP 00 Thread 0xaaaadb8656a0 (Binding   0) SCHED           INFO:] Reinsert blocked thread 0xaaaadb8529c0
+[LWP 00 Thread 0xaaaadb8529c0 (Binding   0) MUTEX           INFO:] Lock 0xaaaadb8529c0 hold 0xaaaabe5000c0
+[LWP 00 Thread 0xaaaadb849340 (Binding   0) MUTEX           INFO:] Lock 0xaaaadb849340 hold 0xaaaabe5000c0
+[LWP 00 Thread 0xaaaadb835600 (Binding   0) SCHED           INFO:] Erase 0xaaaadb83fcc0
+[LWP 00 Thread 0xaaaadb835600 (Binding   0) SCHED           INFO:] Erase 0xaaaadb849340
+[LWP 00 Thread 0xaaaadb835600 (Binding   0) SCHED           INFO:] Erase 0xaaaadb8529c0
+[LWP 00 Thread 0xaaaadb835600 (Binding   0) SCHED           INFO:] Erase 0xaaaadb85c020
+[LWP 00 Thread 0xaaaadb835600 (Binding   0) SCHED           INFO:] Erase 0xaaaadb8656a0
+<end of output>
+Test time =   4.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_mt_scheduler_fifo" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_mt_scheduler_fifo" time elapsed: 00:00:04
+----------------------------------------------------------
+
+26/304 Testing: test_scheduler_unit_cond_mt_scheduler_fifo_class
+26/304 Test: test_scheduler_unit_cond_mt_scheduler_fifo_class
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_mt_scheduler_fifo_class"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_mt_scheduler_fifo_class" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_class_scheduler_t<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaaca6655e0 (Binding   0) MAIN            INFO:] Init with 2 vps and 5 threads
+[LWP 00 Thread 0xaaaaca66fca0 (Binding   0) MUTEX           INFO:] Lock 0xaaaaca66fca0 hold 0xaaaaab3100c0
+[LWP 00 Thread 0xaaaaca66fca0 (Binding   0) TEST            INFO:] WAIT
+[LWP 00 Thread 0xaaaaca679320 (Binding   0) MUTEX           INFO:] Lock 0xaaaaca679320 hold 0xaaaaab3100c0
+[LWP 00 Thread 0xaaaaca679320 (Binding   0) TEST            INFO:] WAIT
+[LWP 00 Thread 0xaaaaca679320 (Binding   0) SCHED           INFO:] Remove blocked thread 0xaaaaca66fca0
+[LWP 00 Thread 0xaaaaca6829a0 (Binding   0) MUTEX           INFO:] Lock 0xaaaaca6829a0 hold 0xaaaaab3100c0
+[LWP 00 Thread 0xaaaaca6829a0 (Binding   0) TEST            INFO:] WAIT
+[LWP 00 Thread 0xaaaaca6829a0 (Binding   0) SCHED           INFO:] Remove blocked thread 0xaaaaca679320
+[LWP 00 Thread 0xaaaaca68c000 (Binding   0) MUTEX           INFO:] Lock 0xaaaaca68c000 hold 0xaaaaab3100c0
+[LWP 00 Thread 0xaaaaca68c000 (Binding   0) TEST            INFO:] SIGNAL
+[LWP 00 Thread 0xaaaaca68c000 (Binding   0) SCHED           INFO:] Wait to reinsert blocked thread 0xaaaaca66fca0
+[LWP 00 Thread 0xaaaaca68c000 (Binding   0) SCHED           INFO:] Reinsert blocked thread 0xaaaaca66fca0
+[LWP 00 Thread 0xaaaaca66fca0 (Binding   0) MUTEX           INFO:] Lock 0xaaaaca66fca0 hold 0xaaaaab3100c0
+[LWP 00 Thread 0xaaaaca66fca0 (Binding   0) SCHED           INFO:] Remove blocked thread 0xaaaaca6829a0
+[LWP 00 Thread 0xaaaaca695680 (Binding   0) MUTEX           INFO:] Lock 0xaaaaca695680 hold 0xaaaaab3100c0
+[LWP 00 Thread 0xaaaaca695680 (Binding   0) TEST            INFO:] BROADCAST
+[LWP 00 Thread 0xaaaaca695680 (Binding   0) SCHED           INFO:] Wait to reinsert blocked thread 0xaaaaca679320
+[LWP 00 Thread 0xaaaaca695680 (Binding   0) SCHED           INFO:] Reinsert blocked thread 0xaaaaca679320
+[LWP 00 Thread 0xaaaaca695680 (Binding   0) SCHED           INFO:] Wait to reinsert blocked thread 0xaaaaca6829a0
+[LWP 00 Thread 0xaaaaca695680 (Binding   0) SCHED           INFO:] Reinsert blocked thread 0xaaaaca6829a0
+[LWP 00 Thread 0xaaaaca6829a0 (Binding   0) MUTEX           INFO:] Lock 0xaaaaca6829a0 hold 0xaaaaab3100c0
+[LWP 00 Thread 0xaaaaca679320 (Binding   0) MUTEX           INFO:] Lock 0xaaaaca679320 hold 0xaaaaab3100c0
+[LWP 00 Thread 0xaaaaca6655e0 (Binding   0) SCHED           INFO:] Erase 0xaaaaca66fca0
+[LWP 00 Thread 0xaaaaca6655e0 (Binding   0) SCHED           INFO:] Erase 0xaaaaca679320
+[LWP 00 Thread 0xaaaaca6655e0 (Binding   0) SCHED           INFO:] Erase 0xaaaaca6829a0
+[LWP 00 Thread 0xaaaaca6655e0 (Binding   0) SCHED           INFO:] Erase 0xaaaaca68c000
+[LWP 00 Thread 0xaaaaca6655e0 (Binding   0) SCHED           INFO:] Erase 0xaaaaca695680
+<end of output>
+Test time =   4.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_mt_scheduler_fifo_class" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_mt_scheduler_fifo_class" time elapsed: 00:00:04
+----------------------------------------------------------
+
+27/304 Testing: test_scheduler_unit_cond_signal_scheduler_fifo
+27/304 Test: test_scheduler_unit_cond_signal_scheduler_fifo
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_signal_scheduler_fifo"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_signal_scheduler_fifo" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_scheduler_s<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaab0fb824a0 (Binding   0) MAIN            INFO:] Init with 1 vps and 1 threads
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_signal_scheduler_fifo" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_signal_scheduler_fifo" time elapsed: 00:00:00
+----------------------------------------------------------
+
+28/304 Testing: test_scheduler_unit_cond_signal_scheduler_fifo_class
+28/304 Test: test_scheduler_unit_cond_signal_scheduler_fifo_class
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_signal_scheduler_fifo_class"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_signal_scheduler_fifo_class" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_class_scheduler_t<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaada298480 (Binding   0) MAIN            INFO:] Init with 1 vps and 1 threads
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_signal_scheduler_fifo_class" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_signal_scheduler_fifo_class" time elapsed: 00:00:00
+----------------------------------------------------------
+
+29/304 Testing: test_scheduler_unit_cond_wait_scheduler_fifo
+29/304 Test: test_scheduler_unit_cond_wait_scheduler_fifo
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_wait_scheduler_fifo"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_wait_scheduler_fifo" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_scheduler_s<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaaf6e89600 (Binding   0) MAIN            INFO:] Init with 2 vps and 2 threads
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_wait_scheduler_fifo" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_wait_scheduler_fifo" time elapsed: 00:00:00
+----------------------------------------------------------
+
+30/304 Testing: test_scheduler_unit_cond_wait_scheduler_fifo_class
+30/304 Test: test_scheduler_unit_cond_wait_scheduler_fifo_class
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/test_scheduler_unit_cond_wait_scheduler_fifo_class"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests
+"test_scheduler_unit_cond_wait_scheduler_fifo_class" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_class_scheduler_t<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaacdd035e0 (Binding   0) MAIN            INFO:] Init with 2 vps and 2 threads
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_scheduler_unit_cond_wait_scheduler_fifo_class" end time: Feb 28 19:49 CET
+"test_scheduler_unit_cond_wait_scheduler_fifo_class" time elapsed: 00:00:00
+----------------------------------------------------------
+
+303/304 Testing: example_cond
+303/304 Test: example_cond
+Command: "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/examples/example_cond"
+Directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/examples
+"example_cond" start time: Feb 28 19:49 CET
+Output:
+----------------------------------------------------------
+Init mthread in mode  (fifo_class_scheduler_t<mthread_threads_pthread_spinlock, mthread_threads_pthread<mthread_threads_pthread_spinlock, mthread_threads_pthread_barrier>, mthread_dummy_loadbalancer>)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] === Q.6 : Test des conditions variables ===
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [init]  cond_init(&cond)        = 0  OK
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [init]  cond_init(nullptr)      = 3  OK (ERROR_NULL)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [init]  cond_init(&cond) x2     = 1  OK (ERROR_INIT)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [wait]  cond_wait(mutex non lock) = 4  OK (ERROR_NOT_LOCKED)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [signal] cond_signal (pas de waiters) = 0  OK (no-op)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [signal] cond_signal(nullptr)         = 3  OK (ERROR_NULL)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [bcast] cond_broadcast (pas de waiters) = 0  OK (no-op)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [bcast] cond_broadcast(nullptr)         = 3  OK (ERROR_NULL)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] --- Lancement du scénario multi-thread ---
+[LWP 00 Thread 0xaaaaf3b10ca0 (Binding   0) MUTEX           INFO:] Lock 0xaaaaf3b10ca0 hold 0xaaaad9bc00b0
+[LWP 00 Thread 0xaaaaf3b10ca0 (Binding   0) WORK            INFO:] Worker 0 : en attente sur la condition
+[LWP 00 Thread 0xaaaaf3b1a320 (Binding   0) MUTEX           INFO:] Lock 0xaaaaf3b1a320 hold 0xaaaad9bc00b0
+[LWP 00 Thread 0xaaaaf3b1a320 (Binding   0) WORK            INFO:] Worker 1 : en attente sur la condition
+[LWP 00 Thread 0xaaaaf3b1a320 (Binding   0) SCHED           INFO:] Remove blocked thread 0xaaaaf3b10ca0
+[LWP 00 Thread 0xaaaaf3b239a0 (Binding   0) MUTEX           INFO:] Lock 0xaaaaf3b239a0 hold 0xaaaad9bc00b0
+[LWP 00 Thread 0xaaaaf3b239a0 (Binding   0) WORK            INFO:] Worker 2 : en attente sur la condition
+[LWP 00 Thread 0xaaaaf3b239a0 (Binding   0) SCHED           INFO:] Remove blocked thread 0xaaaaf3b1a320
+[LWP 00 Thread 0xaaaaf3b2d000 (Binding   0) MUTEX           INFO:] Lock 0xaaaaf3b2d000 hold 0xaaaad9bc00b0
+[LWP 00 Thread 0xaaaaf3b2d000 (Binding   0) SIG             INFO:] cond_signal → réveille 1 worker
+[LWP 00 Thread 0xaaaaf3b2d000 (Binding   0) SCHED           INFO:] Wait to reinsert blocked thread 0xaaaaf3b10ca0
+[LWP 00 Thread 0xaaaaf3b2d000 (Binding   0) SCHED           INFO:] Reinsert blocked thread 0xaaaaf3b10ca0
+[LWP 00 Thread 0xaaaaf3b10ca0 (Binding   0) MUTEX           INFO:] Lock 0xaaaaf3b10ca0 hold 0xaaaad9bc00b0
+[LWP 00 Thread 0xaaaaf3b10ca0 (Binding   0) WORK            INFO:] Worker 0 : réveillé (woken=1)
+[LWP 00 Thread 0xaaaaf3b10ca0 (Binding   0) SCHED           INFO:] Remove blocked thread 0xaaaaf3b239a0
+[LWP 00 Thread 0xaaaaf3b36680 (Binding   0) MUTEX           INFO:] Lock 0xaaaaf3b36680 hold 0xaaaad9bc00b0
+[LWP 00 Thread 0xaaaaf3b36680 (Binding   0) BCAST           INFO:] cond_broadcast → réveille les workers restants
+[LWP 00 Thread 0xaaaaf3b36680 (Binding   0) SCHED           INFO:] Wait to reinsert blocked thread 0xaaaaf3b1a320
+[LWP 00 Thread 0xaaaaf3b36680 (Binding   0) SCHED           INFO:] Reinsert blocked thread 0xaaaaf3b1a320
+[LWP 00 Thread 0xaaaaf3b36680 (Binding   0) SCHED           INFO:] Wait to reinsert blocked thread 0xaaaaf3b239a0
+[LWP 00 Thread 0xaaaaf3b36680 (Binding   0) SCHED           INFO:] Reinsert blocked thread 0xaaaaf3b239a0
+[LWP 00 Thread 0xaaaaf3b239a0 (Binding   0) MUTEX           INFO:] Lock 0xaaaaf3b239a0 hold 0xaaaad9bc00b0
+[LWP 00 Thread 0xaaaaf3b239a0 (Binding   0) WORK            INFO:] Worker 2 : réveillé (woken=2)
+[LWP 00 Thread 0xaaaaf3b1a320 (Binding   0) MUTEX           INFO:] Lock 0xaaaaf3b1a320 hold 0xaaaad9bc00b0
+[LWP 00 Thread 0xaaaaf3b1a320 (Binding   0) WORK            INFO:] Worker 1 : réveillé (woken=3)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) SCHED           INFO:] Erase 0xaaaaf3b10ca0
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) SCHED           INFO:] Erase 0xaaaaf3b1a320
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) SCHED           INFO:] Erase 0xaaaaf3b239a0
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) SCHED           INFO:] Erase 0xaaaaf3b2d000
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) SCHED           INFO:] Erase 0xaaaaf3b36680
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [multi] woken=3 (attendu: 3) OK
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [destroy] cond_destroy(&cond)   = 0  OK
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [destroy] cond_destroy x2       = 1  OK (ERROR_INIT)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] [destroy] cond_destroy(nullptr) = 3  OK (ERROR_NULL)
+[LWP 00 Thread 0xaaaaf3b065e0 (Binding   0) MAIN            INFO:] === Tous les tests Q.6 OK ===
+<end of output>
+Test time =   3.00 sec
+----------------------------------------------------------
+Test Passed.
+"example_cond" end time: Feb 28 19:49 CET
+"example_cond" time elapsed: 00:00:03
+----------------------------------------------------------
+
+End testing: Feb 28 19:49 CET
+
+unit_test =   8.05 sec*proc
+

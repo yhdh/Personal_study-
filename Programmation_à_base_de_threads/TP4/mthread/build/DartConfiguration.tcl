@@ -4,17 +4,17 @@
 
 
 # Configuration directories and files
-SourceDirectory: /Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread
-BuildDirectory: /Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/build
+SourceDirectory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread
+BuildDirectory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build
 
 # Where to place the cost data store
 CostDataFile: 
 
 # Site is something like machine.domain, i.e. pragmatic.crd
-Site: MacBook-Air-de-Abdel.local
+Site: debian
 
 # Build name is osname-revision-compiler, i.e. Linux-2.4.2-2smp-c++
-BuildName: Darwin-c++
+BuildName: Linux-c++
 
 # Subprojects
 LabelsForSubprojects: 
@@ -27,8 +27,8 @@ SubmitInactivityTimeout:
 NightlyStartTime: 00:00:00 EDT
 
 # Commands for the build/test/submit cycle
-ConfigureCommand: "/opt/homebrew/bin/cmake" "/Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread"
-MakeCommand: /opt/homebrew/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}"
+ConfigureCommand: "/usr/bin/cmake" "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread"
+MakeCommand: /usr/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}"
 DefaultCTestConfigurationType: Release
 
 # version control
@@ -64,7 +64,7 @@ UpdateType:
 
 # Compiler info
 Compiler: /usr/bin/c++
-CompilerVersion: 17.0.0.17000603
+CompilerVersion: 12.2.0
 
 # Dynamic analysis (MemCheck)
 PurifyCommand: 
@@ -94,9 +94,6 @@ TimeOut: 1500
 # During parallel testing CTest will not start a new test if doing
 # so would cause the system load to exceed this value.
 TestLoad: 
-
-TLSVerify: 
-TLSVersion: 
 
 UseLaunchers: 
 CurlOptions: 

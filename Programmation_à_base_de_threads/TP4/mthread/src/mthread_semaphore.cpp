@@ -16,7 +16,7 @@ int mthread_sem_init(mthread_sem_t *sem, int value) {
   }
   sem->is_initialized = true;
   atomic_store(&(sem->value), value);
-  sem->thread_list_spinlock = (atomic_flag)ATOMIC_FLAG_INIT;
+  atomic_flag_clear(&(sem->thread_list_spinlock));
   sem->thread_list.head = nullptr;
   sem->thread_list.tail = nullptr;
   return 0;

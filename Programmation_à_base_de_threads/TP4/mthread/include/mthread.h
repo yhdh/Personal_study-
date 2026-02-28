@@ -92,10 +92,9 @@ int mthread_sem_getvalue(mthread_sem_t *sem, int *val);
 // CONDITIONS 
 
 typedef struct mthread_cond_s {
-
-/* TO DO */
-  int _placeholder;
-
+  bool is_initialized = false;
+  atomic_flag thread_list_spinlock = ATOMIC_FLAG_INIT;
+  mthread_list_t thread_list;
 } mthread_cond_t;
 
 enum {
@@ -110,6 +109,23 @@ int mthread_cond_wait(mthread_cond_t *cond, mthread_mutex_t *mut);
 int mthread_cond_signal(mthread_cond_t *cond);
 int mthread_cond_broadcast(mthread_cond_t *cond);
 int mthread_cond_destroy(mthread_cond_t *cond);
+
+// CLES TLS (Thread Local Storage)
+
+constexpr size_t MTHREAD_KEYS_MAX = 128;
+
+typedef unsigned int mthread_key_t;
+
+enum {
+  MTHREAD_KEY_ERROR_NULL = 1,
+  MTHREAD_KEY_ERROR_INVALID = 2,
+  MTHREAD_KEY_ERROR_MAX = 3,
+};
+
+int mthread_key_create(mthread_key_t *key, void (*destructor)(void *));
+int mthread_key_delete(mthread_key_t key);
+int mthread_setspecific(mthread_key_t key, const void *value);
+void *mthread_getspecific(mthread_key_t key);
 
 // NOLINTBEGIN
 extern mthread_t mthread_self();

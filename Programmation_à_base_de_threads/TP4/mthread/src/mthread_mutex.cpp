@@ -5,7 +5,6 @@
 #include <mthread_vp_threads.h>
 
 int mthread_mutex_lock(mthread_mutex_t *lock) {
-  bool unlocked = false;
   if (lock == nullptr) {
     return MTHREAD_MUTEX_ERROR_NULL;
   } else {
@@ -24,6 +23,7 @@ int mthread_mutex_lock(mthread_mutex_t *lock) {
     if (!lock->is_locked) {
 	  lock->is_locked = true;
       lock->owner = current_thread;
+      mthread_internal_spin_unlock(&(lock->thread_list_spinlock));
       mthread_log("MUTEX", "Lock %p hold %p\n", lock->owner, lock);
       return 0;
     } else {
@@ -38,7 +38,6 @@ int mthread_mutex_lock(mthread_mutex_t *lock) {
   return 0;
 }
 int mthread_mutex_unlock(mthread_mutex_t *lock) {
-  bool unlocked = false;
   mthread_thread_t *current_thread;
   if (lock == nullptr) {
     return MTHREAD_MUTEX_ERROR_NULL;
@@ -70,7 +69,7 @@ int mthread_mutex_unlock(mthread_mutex_t *lock) {
       mthread_log("MUTEX", "Unlock %p hold %p\n", lock->owner, lock);
       mthread_wake_thread(item->thread);
     } else {
-      atomic_store(&(lock->is_locked), unlocked);
+      atomic_store(&(lock->is_locked), false);
     }
   }
   return 0;

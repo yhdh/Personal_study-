@@ -1,6 +1,6 @@
 # CMake generated Testfile for 
-# Source directory: /Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread
-# Build directory: /Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/build
+# Source directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread
+# Build directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build
 # 
 # This file includes the relevant testing commands required for 
 # testing this directory and lists subdirectories to be tested as well.

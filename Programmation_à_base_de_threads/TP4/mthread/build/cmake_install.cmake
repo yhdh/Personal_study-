@@ -1,4 +1,4 @@
-# Install script for directory: /Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread
+# Install script for directory: /home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -12,7 +12,7 @@ if(NOT DEFINED CMAKE_INSTALL_CONFIG_NAME)
     string(REGEX REPLACE "^[^A-Za-z0-9_]+" ""
            CMAKE_INSTALL_CONFIG_NAME "${BUILD_TYPE}")
   else()
-    set(CMAKE_INSTALL_CONFIG_NAME "Debug")
+    set(CMAKE_INSTALL_CONFIG_NAME "")
   endif()
   message(STATUS "Install configuration: \"${CMAKE_INSTALL_CONFIG_NAME}\"")
 endif()
@@ -27,69 +27,85 @@ if(NOT CMAKE_INSTALL_COMPONENT)
   endif()
 endif()
 
+# Install shared libraries without execute permission?
+if(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
+  set(CMAKE_INSTALL_SO_NO_EXE "1")
+endif()
+
 # Is this installation the result of a crosscompile?
 if(NOT DEFINED CMAKE_CROSSCOMPILING)
   set(CMAKE_CROSSCOMPILING "FALSE")
 endif()
 
-# Set path to fallback-tool for dependency-resolution.
+# Set default install directory permissions.
 if(NOT DEFINED CMAKE_OBJDUMP)
   set(CMAKE_OBJDUMP "/usr/bin/objdump")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  foreach(file
+      "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.so.0.1"
+      "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.so.1"
+      )
+    if(EXISTS "${file}" AND
+       NOT IS_SYMLINK "${file}")
+      file(RPATH_CHECK
+           FILE "${file}"
+           RPATH "")
+    endif()
+  endforeach()
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE SHARED_LIBRARY FILES
-    "/Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/build/src/liblibmthread.0.1.dylib"
-    "/Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/build/src/liblibmthread.1.dylib"
+    "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/src/liblibmthread.so.0.1"
+    "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/src/liblibmthread.so.1"
     )
   foreach(file
-      "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.0.1.dylib"
-      "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.1.dylib"
+      "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.so.0.1"
+      "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.so.1"
       )
     if(EXISTS "${file}" AND
        NOT IS_SYMLINK "${file}")
       if(CMAKE_INSTALL_DO_STRIP)
-        execute_process(COMMAND "/usr/bin/strip" -x "${file}")
+        execute_process(COMMAND "/usr/bin/strip" "${file}")
       endif()
     endif()
   endforeach()
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE SHARED_LIBRARY FILES "/Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/build/src/liblibmthread.dylib")
+  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.so" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.so")
+    file(RPATH_CHECK
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.so"
+         RPATH "")
+  endif()
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE SHARED_LIBRARY FILES "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/src/liblibmthread.so")
+  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.so" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.so")
+    if(CMAKE_INSTALL_DO_STRIP)
+      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/liblibmthread.so")
+    endif()
+  endif()
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE FILE FILES "/Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/include/mthread.h")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE FILE FILES "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/include/mthread.h")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/build/src/cmake_install.cmake")
-  include("/Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/build/tests/cmake_install.cmake")
-  include("/Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/build/examples/cmake_install.cmake")
+  include("/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/src/cmake_install.cmake")
+  include("/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/tests/cmake_install.cmake")
+  include("/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/examples/cmake_install.cmake")
 
 endif()
 
-string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
-       "${CMAKE_INSTALL_MANIFEST_FILES}")
-if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/build/install_local_manifest.txt"
-     "${CMAKE_INSTALL_MANIFEST_CONTENT}")
-endif()
 if(CMAKE_INSTALL_COMPONENT)
-  if(CMAKE_INSTALL_COMPONENT MATCHES "^[a-zA-Z0-9_.+-]+$")
-    set(CMAKE_INSTALL_MANIFEST "install_manifest_${CMAKE_INSTALL_COMPONENT}.txt")
-  else()
-    string(MD5 CMAKE_INST_COMP_HASH "${CMAKE_INSTALL_COMPONENT}")
-    set(CMAKE_INSTALL_MANIFEST "install_manifest_${CMAKE_INST_COMP_HASH}.txt")
-    unset(CMAKE_INST_COMP_HASH)
-  endif()
+  set(CMAKE_INSTALL_MANIFEST "install_manifest_${CMAKE_INSTALL_COMPONENT}.txt")
 else()
   set(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 endif()
 
-if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/Users/yahdhih/etudes/S4/Personal_study-/Programmation_à_base_de_threads/PBT-MPP-TD2-ETUDIANT-2/mthread/build/${CMAKE_INSTALL_MANIFEST}"
+string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
+       "${CMAKE_INSTALL_MANIFEST_FILES}")
+file(WRITE "/home/yhdh/etudes/2A/Personal_study-/Programmation_à_base_de_threads/TP4/mthread/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
-endif()
