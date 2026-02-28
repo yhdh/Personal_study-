@@ -1,0 +1,9 @@
+#!/bin/bash
+
+ulimit -c unlimited
+
+RES=0
+while test "$RES" = "0"; do
+      $@
+      RES=$?
+done

@@ -1,0 +1,454 @@
+\documentclass[12pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{booktabs}
+
+\geometry{margin=2.5cm}
+
+% --- Style des listings ---
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codegreen}{RGB}{0,128,0}
+\definecolor{codegray}{RGB}{100,100,100}
+\definecolor{codeblue}{RGB}{0,0,180}
+\definecolor{codepurple}{RGB}{128,0,128}
+
+\lstdefinestyle{cstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  captionpos=b,
+  commentstyle=\color{codegreen}\itshape,
+  keywordstyle=\color{codeblue}\bfseries,
+  stringstyle=\color{codepurple},
+  numberstyle=\tiny\color{codegray},
+  numbers=left,
+  numbersep=8pt,
+  frame=single,
+  rulecolor=\color{codegray!40},
+  tabsize=2,
+  showstringspaces=false,
+  language=C++,
+  morekeywords={nullptr, atomic_int, atomic_flag, atomic_bool, bool, mthread_sem_t,
+    mthread_thread_t, mthread_list_item_t, mthread_list_t, mthread_t, mthread_mutex_t,
+    atomic_store, atomic_load, atomic_fetch_sub, atomic_fetch_add, ATOMIC_FLAG_INIT,
+    constexpr, size_t},
+  literate=
+    {à}{{\`a}}1 {é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {ë}{{\"e}}1
+    {î}{{\^i}}1 {ï}{{\"i}}1 {ô}{{\^o}}1 {ù}{{\`u}}1 {û}{{\^u}}1
+    {ç}{{\c{c}}}1 {→}{{$\rightarrow$}}1
+}
+
+\lstset{style=cstyle}
+
+% --- En-tête / pied de page ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textsc{TP 3 -- Sémaphores}}
+\fancyhead[R]{\textsc{Programmation à base de threads}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Titre ---
+\title{%
+  \vspace{-1cm}
+  \textbf{TP 3 -- Sémaphores dans mthread}\\[0.3cm]
+  \large Programmation à base de threads -- S4
+}
+\author{}
+\date{21 février 2026}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+% ============================================================
+\section{Sémaphore -- Exemple}
+% ============================================================
+
+\subsection*{Q.1 : Décrire à l'aide d'un schéma l'utilité du sémaphore dans l'exemple précédent}
+
+Dans l'exemple \texttt{q1.c}, deux threads (\texttt{filsA} et \texttt{filsB}) exécutent la même fonction \texttt{affichage()} qui imprime des caractères (\texttt{"A"} ou \texttt{"B"}) sur la sortie standard. Sans sémaphore, les affichages des deux threads s'entremêleraient de manière imprévisible (ex: \texttt{AAABBBAABB...}).
+
+Le sémaphore \texttt{mutex} (initialisé à 1) est utilisé comme \textbf{verrou d'exclusion mutuelle} :
+
+\begin{lstlisting}[language={},numbers=none,basicstyle=\ttfamily\small]
+Thread A                          Thread B
+   |                                 |
+   |--- sem_wait(&mutex) -------->  |  (value: 1 -> 0, A entre)
+   |    [affiche AAAAA]             |
+   |    sched_yield()               |--- sem_wait(&mutex)
+   |    [affiche AAAAA + \n]        |       (value=0, B BLOQUE)
+   |--- sem_post(&mutex) -------->  |       |
+   |                                |       | (reveille B)
+   |--- sem_wait(&mutex)           |    [affiche BBBBB]
+   |   (value=0, A BLOQUE)         |    sched_yield()
+   |         |                      |    [affiche BBBBB + \n]
+   |         |                      |--- sem_post(&mutex) (reveille A)
+   ...      ...                    ...
+\end{lstlisting}
+
+\textbf{Utilité} : Le sémaphore garantit que chaque ligne complète (10 caractères identiques + \texttt{\textbackslash n}) est affichée \textbf{de manière atomique}, sans entrelacement. Même si \texttt{sched\_yield()} est appelé au milieu de l'affichage, le thread B ne peut pas intervenir car il est bloqué sur \texttt{sem\_wait}. Cela assure que la sortie sera toujours des lignes de \texttt{AAAAAAAAAA} ou \texttt{BBBBBBBBBB}, jamais mélangées.
+
+% ============================================================
+\section{Mise en place des sémaphores dans mthread}
+% ============================================================
+
+\subsection*{Structure du sémaphore}
+
+La structure \texttt{mthread\_sem\_t} a été définie dans \texttt{mthread.h} :
+
+\begin{lstlisting}
+typedef struct mthread_sem_s {
+  bool is_initialized = false;        // Indique si le semaphore est initialise
+  atomic_int value = 0;               // Compteur atomique du semaphore
+  atomic_flag thread_list_spinlock = ATOMIC_FLAG_INIT;  // Spinlock
+  mthread_list_t thread_list;         // Liste des threads en attente
+} mthread_sem_t;
+\end{lstlisting}
+
+\begin{itemize}
+  \item \texttt{is\_initialized} -- Drapeau indiquant si le sémaphore a été initialisé.
+  \item \texttt{value} -- Compteur atomique représentant la valeur du sémaphore.
+  \item \texttt{thread\_list\_spinlock} -- Verrou spinlock protégeant l'accès concurrent à la liste d'attente.
+  \item \texttt{thread\_list} -- Liste chaînée des threads bloqués en attente sur le sémaphore.
+\end{itemize}
+
+% ------------------------------------------------------------
+\subsection*{Q.2 : \texttt{mthread\_sem\_init}}
+
+\textbf{Rôle} : Initialise un sémaphore avec une valeur donnée.
+
+\begin{lstlisting}
+int mthread_sem_init(mthread_sem_t *sem, int value) {
+  if (sem == nullptr) {
+    return MTHREAD_SEM_ERROR_NULL;
+  }
+  if (value < 0) {
+    return MTHREAD_SEM_ERROR_INIT;
+  }
+  if (sem->is_initialized) {
+    return MTHREAD_SEM_ERROR_INIT;
+  }
+  sem->is_initialized = true;
+  atomic_store(&(sem->value), value);
+  sem->thread_list_spinlock = (atomic_flag)ATOMIC_FLAG_INIT;
+  sem->thread_list.head = nullptr;
+  sem->thread_list.tail = nullptr;
+  return 0;
+}
+\end{lstlisting}
+
+\textbf{Détails} :
+\begin{itemize}
+  \item On vérifie que le pointeur \texttt{sem} n'est pas \texttt{NULL}.
+  \item On refuse les valeurs négatives (\texttt{MTHREAD\_SEM\_ERROR\_INIT}).
+  \item On refuse une double initialisation (\texttt{MTHREAD\_SEM\_ERROR\_INIT}).
+  \item On stocke la valeur de manière atomique et on initialise le spinlock et la liste d'attente à vide.
+\end{itemize}
+
+% ------------------------------------------------------------
+\subsection*{Q.3 : \texttt{mthread\_sem\_wait}}
+
+\textbf{Rôle} : Décrémente le sémaphore. Si la valeur est 0, le thread appelant est bloqué jusqu'à ce qu'un autre thread fasse \texttt{sem\_post}.
+
+\begin{lstlisting}
+int mthread_sem_wait(mthread_sem_t *sem) {
+  if (sem == nullptr) {
+    return MTHREAD_SEM_ERROR_NULL;
+  }
+  if (!sem->is_initialized) {
+    return MTHREAD_SEM_ERROR_INIT;
+  }
+
+  mthread_internal_spin_lock(&(sem->thread_list_spinlock));
+
+  if (atomic_load(&(sem->value)) > 0) {
+    atomic_fetch_sub(&(sem->value), 1);
+    mthread_internal_spin_unlock(&(sem->thread_list_spinlock));
+    return 0;
+  }
+
+  // Valeur == 0 : on bloque le thread
+  mthread_thread_t *current_thread = mthread_self();
+  mthread_list_item_t item;
+  item.thread = current_thread;
+  insert_tail_in_list(&item, &sem->thread_list);
+  mthread_block_self(&(sem->thread_list_spinlock));
+
+  return 0;
+}
+\end{lstlisting}
+
+\textbf{Détails} :
+\begin{itemize}
+  \item On prend le spinlock pour protéger l'accès concurrent à \texttt{value} et à la liste d'attente.
+  \item Si \texttt{value > 0} : on décrémente et on libère le spinlock $\rightarrow$ le thread continue.
+  \item Si \texttt{value == 0} : on insère le thread courant dans la liste d'attente (\texttt{thread\_list}) puis on appelle \texttt{mthread\_block\_self} qui bloque le thread \textbf{et} libère le spinlock de manière atomique (même mécanisme que le mutex).
+\end{itemize}
+
+% ------------------------------------------------------------
+\subsection*{Q.4 : \texttt{mthread\_sem\_post}}
+
+\textbf{Rôle} : Incrémente le sémaphore. Si des threads sont en attente, en réveille un.
+
+\begin{lstlisting}
+int mthread_sem_post(mthread_sem_t *sem) {
+  if (sem == nullptr) {
+    return MTHREAD_SEM_ERROR_NULL;
+  }
+  if (!sem->is_initialized) {
+    return MTHREAD_SEM_ERROR_INIT;
+  }
+
+  mthread_internal_spin_lock(&(sem->thread_list_spinlock));
+
+  if (sem->thread_list.head != nullptr) {
+    mthread_list_item_t *item = remove_head_in_list(&(sem->thread_list));
+    mthread_internal_spin_unlock(&(sem->thread_list_spinlock));
+    mthread_wake_thread(item->thread);
+  } else {
+    atomic_fetch_add(&(sem->value), 1);
+    mthread_internal_spin_unlock(&(sem->thread_list_spinlock));
+  }
+
+  return 0;
+}
+\end{lstlisting}
+
+\textbf{Détails} :
+\begin{itemize}
+  \item On prend le spinlock.
+  \item S'il y a des threads bloqués dans \texttt{thread\_list} : on retire le premier de la liste (FIFO) et on le réveille avec \texttt{mthread\_wake\_thread}. La valeur du sémaphore ne change pas (le jeton est transféré directement au thread réveillé).
+  \item S'il n'y a pas de thread en attente : on incrémente simplement la valeur.
+\end{itemize}
+
+% ------------------------------------------------------------
+\subsection*{Q.5 : \texttt{mthread\_sem\_destroy}}
+
+\textbf{Note} : La fonction \texttt{mthread\_sem\_destroy} n'est pas déclarée dans l'API \texttt{mthread.h} de ce TD. Voici comment elle pourrait être implémentée par analogie avec \texttt{mthread\_mutex\_destroy} :
+
+\begin{lstlisting}
+int mthread_sem_destroy(mthread_sem_t *sem) {
+  if (sem == nullptr) {
+    return MTHREAD_SEM_ERROR_NULL;
+  }
+  if (!sem->is_initialized) {
+    return MTHREAD_SEM_ERROR_INIT;
+  }
+  // On ne peut pas detruire un semaphore si des threads sont en attente
+  if (sem->thread_list.head != nullptr) {
+    return MTHREAD_SEM_ERROR_ALREADY_LOCKED;
+  }
+  sem->is_initialized = false;
+  atomic_store(&(sem->value), 0);
+  sem->thread_list.head = nullptr;
+  sem->thread_list.tail = nullptr;
+  return 0;
+}
+\end{lstlisting}
+
+\textbf{Détails} :
+\begin{itemize}
+  \item On vérifie que le sémaphore est initialisé.
+  \item On refuse la destruction si des threads sont encore bloqués dans la file d'attente.
+  \item On remet tous les champs à leur état initial.
+\end{itemize}
+
+% ------------------------------------------------------------
+\subsection*{Q.6 : \texttt{mthread\_sem\_trywait}}
+
+\textbf{Rôle} : Tente de décrémenter le sémaphore de manière \textbf{non bloquante}. Si la valeur est 0, retourne une erreur au lieu de bloquer.
+
+\begin{lstlisting}
+int mthread_sem_trylock(mthread_sem_t *sem) {
+  if (sem == nullptr) {
+    return MTHREAD_SEM_ERROR_NULL;
+  }
+  if (!sem->is_initialized) {
+    return MTHREAD_SEM_ERROR_INIT;
+  }
+
+  int current = atomic_load(&(sem->value));
+  if (current > 0) {
+    atomic_fetch_sub(&(sem->value), 1);
+    return 0;
+  }
+
+  return MTHREAD_SEM_ERROR_ALREADY_LOCKED;
+}
+\end{lstlisting}
+
+\textbf{Détails} :
+\begin{itemize}
+  \item On lit la valeur courante du sémaphore.
+  \item Si \texttt{value > 0} : on décrémente et on retourne 0 (succès).
+  \item Si \texttt{value == 0} : on retourne \texttt{MTHREAD\_SEM\_ERROR\_ALREADY\_LOCKED} sans bloquer le thread. C'est la différence fondamentale avec \texttt{sem\_wait}.
+\end{itemize}
+
+% ------------------------------------------------------------
+\subsection*{Q.7 : \texttt{mthread\_sem\_getvalue}}
+
+\textbf{Rôle} : Récupère la valeur courante du sémaphore.
+
+\begin{lstlisting}
+int mthread_sem_getvalue(mthread_sem_t *sem, int *val) {
+  if (sem == nullptr || val == nullptr) {
+    return MTHREAD_SEM_ERROR_NULL;
+  }
+  if (!sem->is_initialized) {
+    return MTHREAD_SEM_ERROR_INIT;
+  }
+  *val = atomic_load(&(sem->value));
+  return 0;
+}
+\end{lstlisting}
+
+\textbf{Détails} :
+\begin{itemize}
+  \item On vérifie que ni \texttt{sem} ni \texttt{val} ne sont \texttt{NULL}.
+  \item On vérifie que le sémaphore est initialisé.
+  \item On lit la valeur atomiquement et on l'écrit dans \texttt{*val}.
+\end{itemize}
+
+% ============================================================
+\section{Démonstration}
+% ============================================================
+
+\subsection*{Q.8 : Programmes d'exemple testant chaque fonction}
+
+\subsubsection*{Test de \texttt{mthread\_sem\_init}}
+
+\begin{lstlisting}
+// Verifie : init normal, init avec valeur negative, double init
+mthread_sem_t sem;
+int res;
+
+res = mthread_sem_init(&sem, 1);    // Doit retourner 0
+assert(res == 0);
+
+mthread_sem_t sem2;
+res = mthread_sem_init(&sem2, -1);  // Doit retourner MTHREAD_SEM_ERROR_INIT
+assert(res == MTHREAD_SEM_ERROR_INIT);
+
+res = mthread_sem_init(&sem, 1);    // Double init -> MTHREAD_SEM_ERROR_INIT
+assert(res == MTHREAD_SEM_ERROR_INIT);
+\end{lstlisting}
+
+\subsubsection*{Test de \texttt{mthread\_sem\_wait}}
+
+\begin{lstlisting}
+// Verifie : wait decremente la valeur
+mthread_sem_t sem;
+int res, val;
+
+mthread_sem_init(&sem, 2);
+mthread_sem_wait(&sem);
+mthread_sem_getvalue(&sem, &val);
+assert(val == 1);  // 2 - 1 = 1
+
+mthread_sem_wait(&sem);
+mthread_sem_getvalue(&sem, &val);
+assert(val == 0);  // 1 - 1 = 0
+\end{lstlisting}
+
+\subsubsection*{Test de \texttt{mthread\_sem\_post}}
+
+\begin{lstlisting}
+// Verifie : post incremente la valeur
+mthread_sem_t sem;
+int res, val;
+
+mthread_sem_init(&sem, 0);
+mthread_sem_post(&sem);
+mthread_sem_getvalue(&sem, &val);
+assert(val == 1);  // 0 + 1 = 1
+
+mthread_sem_post(&sem);
+mthread_sem_getvalue(&sem, &val);
+assert(val == 2);  // 1 + 1 = 2
+\end{lstlisting}
+
+\subsubsection*{Test de \texttt{mthread\_sem\_trywait}}
+
+\begin{lstlisting}
+// Verifie : trylock non bloquant
+mthread_sem_t sem;
+int res;
+
+mthread_sem_init(&sem, 1);
+res = mthread_sem_trylock(&sem);
+assert(res == 0);  // Succes, value passe de 1 a 0
+
+res = mthread_sem_trylock(&sem);
+assert(res == MTHREAD_SEM_ERROR_ALREADY_LOCKED);  // Echec, value == 0
+
+mthread_sem_post(&sem);  // value remonte a 1
+res = mthread_sem_trylock(&sem);
+assert(res == 0);  // Succes a nouveau
+\end{lstlisting}
+
+\subsubsection*{Test de \texttt{mthread\_sem\_getvalue}}
+
+\begin{lstlisting}
+// Verifie : lecture de la valeur et gestion des erreurs
+mthread_sem_t sem;
+int res, val;
+
+mthread_sem_init(&sem, 42);
+res = mthread_sem_getvalue(&sem, &val);
+assert(res == 0 && val == 42);
+
+res = mthread_sem_getvalue(nullptr, &val);
+assert(res == MTHREAD_SEM_ERROR_NULL);  // sem NULL
+
+res = mthread_sem_getvalue(&sem, nullptr);
+assert(res == MTHREAD_SEM_ERROR_NULL);  // val NULL
+\end{lstlisting}
+
+\subsubsection*{Test multi-thread (wait bloquant + post)}
+
+\begin{lstlisting}
+// Verifie le comportement bloquant de sem_wait en multi-thread
+mthread_sem_t sem;
+
+void* thread_post(void* arg) {
+    mthread_sem_post(&sem);
+    return nullptr;
+}
+
+void* thread_wait(void* arg) {
+    mthread_sem_wait(&sem);  // Bloque si value == 0
+    mthread_sem_wait(&sem);  // Attend le post
+    return nullptr;
+}
+
+int main() {
+    mthread_sem_init(&sem, 1);
+    // Valeur initiale = 1
+    // thread_post fait +1 -> value = 2
+    // thread_wait fait -1, -1 -> value = 0
+    mthread_t t1 = mthread_create_thread(nullptr, thread_post, nullptr);
+    mthread_t t2 = mthread_create_thread(nullptr, thread_wait, nullptr);
+    mthread_join(t1, nullptr);
+    mthread_join(t2, nullptr);
+
+    int val;
+    mthread_sem_getvalue(&sem, &val);
+    assert(val == 0);  // 1 + 1 - 1 - 1 = 0
+}
+\end{lstlisting}
+
+\end{document}

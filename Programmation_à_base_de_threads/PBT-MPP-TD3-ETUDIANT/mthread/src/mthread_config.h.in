@@ -1,0 +1,4 @@
+#cmakedefine MTHREAD_USE_VALGRIND
+#cmakedefine MTHREAD_HAVE_CXX_ABI
+#cmakedefine HAVE_FLAG_SANITIZER_address
+#cmakedefine HAVE_CXX_STACKTRACE

@@ -1,0 +1,4 @@
+/* #undef MTHREAD_USE_VALGRIND */
+#define MTHREAD_HAVE_CXX_ABI
+/* #undef HAVE_FLAG_SANITIZER_address */
+/* #undef HAVE_CXX_STACKTRACE */
