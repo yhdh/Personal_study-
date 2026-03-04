@@ -1,6 +1,6 @@
 # for gcc compiler on linux
 # copy to make.def
-CC          = gcc-15
+CC          = gcc
 CLINKER     = $(CC)
 OPTFLAGS    = -fopenmp
 LIBS        = -lm

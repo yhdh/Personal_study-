@@ -1,6 +1,6 @@
 # Compilateur
-CC      = gcc-15
-CLINKER = gcc-15
+CC      = gcc
+CLINKER = gcc
 
 # Flags OpenMP + optimisation
 CFLAGS   = -fopenmp -O2 -D$(NPART)
