@@ -24,8 +24,7 @@
  *  Function declarations
  */
 
-  void
-  dfill(int,double,double[],int);
+  void dfill(int,double,double[],int);
 
   void
   domove(int,double[],double[],double[],double);
