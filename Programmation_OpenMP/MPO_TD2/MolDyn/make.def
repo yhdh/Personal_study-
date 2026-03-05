@@ -1,6 +1,22 @@
+<<<<<<< HEAD
 # for gcc compiler on linux
 # copy to make.def
 CC          = gcc
+=======
+# ===========================================================
+# Configuration pour macOS (avec gcc-15 installé via Homebrew)
+# ===========================================================
+# Sur macOS, le compilateur "gcc" par défaut est en réalité
+# Apple Clang, qui ne supporte PAS OpenMP nativement.
+# Il faut utiliser le vrai GCC installé via Homebrew :
+#   brew install gcc
+# Cela installe gcc-15 (ou la version courante) dans /opt/homebrew/bin/
+#
+# Pour le profilage : "perf" n'existe PAS sur macOS (outil Linux).
+# Alternative macOS : sample <pid> <durée> -f rapport.txt
+# ===========================================================
+CC          = gcc-15
+>>>>>>> d19525f7569a5d187209844c41eb7a4d5487fe51
 CLINKER     = $(CC)
 OPTFLAGS    = -fopenmp
 LIBS        = -lm
@@ -13,3 +29,21 @@ CFLAGS	  = $(OPTFLAGS) -D$(NPART)
 OBJ=o
 EXE=
 RM=rm
+
+# ===========================================================
+# Version Linux (originale) - décommenter si sur Linux :
+# ===========================================================
+# Sur Linux, gcc supporte OpenMP nativement et "perf" est
+# disponible pour le profilage :
+#   % perf record -e cpu-clock ./md   (génère perf.data)
+#   % perf report                      (interprète perf.data)
+# -----------------------------------------------------------
+# CC          = gcc
+# CLINKER     = $(CC)
+# OPTFLAGS    = -fopenmp
+# LIBS        = -lm
+# NPART       =MINI
+# CFLAGS      = $(OPTFLAGS) -D$(NPART)
+# OBJ=o
+# EXE=
+# RM=rm

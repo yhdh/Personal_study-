@@ -1,0 +1,745 @@
+% ============================================================
+%  Rapport TD2 — Parallélisation OpenMP — Dynamique Moléculaire
+%  Compilé avec : pdflatex Rapport.tex  (×2 pour les références)
+% ============================================================
+\documentclass[12pt,a4paper]{article}
+
+% ---------- Encodage & langue ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+
+% ---------- Mise en page ----------
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm, headheight=25pt]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+
+% ---------- Couleurs ----------
+\usepackage[dvipsnames,svgnames,x11names]{xcolor}
+
+\definecolor{mainblue}{HTML}{1A3C6E}
+\definecolor{accentblue}{HTML}{2874A6}
+\definecolor{lightblue}{HTML}{D6EAF8}
+\definecolor{deeporange}{HTML}{D35400}
+\definecolor{forestgreen}{HTML}{1E8449}
+\definecolor{codebg}{HTML}{F7F9FB}
+\definecolor{codeborder}{HTML}{BDC3C7}
+\definecolor{noteyellow}{HTML}{FEF9E7}
+\definecolor{noteborder}{HTML}{F39C12}
+\definecolor{warnred}{HTML}{FDEDEC}
+\definecolor{warnborder}{HTML}{E74C3C}
+\definecolor{resultgreen}{HTML}{EAFAF1}
+\definecolor{resultborder}{HTML}{27AE60}
+
+% ---------- Titres colorés ----------
+\usepackage{titlesec}
+\titleformat{\section}
+  {\LARGE\bfseries\color{mainblue}}
+  {\thesection}{1em}{}[\vspace{0.3em}\textcolor{mainblue}{\hrule height 1.5pt}]
+\titleformat{\subsection}
+  {\Large\bfseries\color{accentblue}}
+  {\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}
+  {\large\bfseries\color{mainblue!80}}
+  {\thesubsubsection}{0.6em}{}
+
+% ---------- En-tête / pied de page ----------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{mainblue}\textbf{TD2 — OpenMP \& Dynamique Moléculaire}}
+\fancyhead[R]{\small\color{mainblue}\thepage}
+\fancyfoot[C]{\small\color{gray}Programmation parallèle — S4}
+\renewcommand{\headrulewidth}{0.8pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{mainblue}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\footrule}{\hbox to\headwidth{\color{gray!50}\leaders\hrule height \footrulewidth\hfill}}
+
+% ---------- Boîtes colorées ----------
+\usepackage[most]{tcolorbox}
+
+\newtcolorbox{notebox}[1][Note]{%
+  colback=noteyellow, colframe=noteborder,
+  fonttitle=\bfseries\color{noteborder},
+  title={#1},
+  boxrule=1pt, arc=3pt, left=8pt, right=8pt, top=4pt, bottom=4pt
+}
+
+\newtcolorbox{warnbox}[1][Attention]{%
+  colback=warnred, colframe=warnborder,
+  fonttitle=\bfseries\color{warnborder},
+  title={#1},
+  boxrule=1pt, arc=3pt, left=8pt, right=8pt, top=4pt, bottom=4pt
+}
+
+\newtcolorbox{resultbox}[1][Résultat]{%
+  colback=resultgreen, colframe=resultborder,
+  fonttitle=\bfseries\color{resultborder},
+  title={#1},
+  boxrule=1pt, arc=3pt, left=8pt, right=8pt, top=4pt, bottom=4pt
+}
+
+\newtcolorbox{infobox}[1][]{%
+  colback=lightblue, colframe=accentblue,
+  fonttitle=\bfseries\color{accentblue},
+  title={#1},
+  boxrule=1pt, arc=3pt, left=8pt, right=8pt, top=4pt, bottom=4pt
+}
+
+% ---------- Code source ----------
+\usepackage{listings}
+
+\lstdefinestyle{cstyle}{
+  language=C,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeborder},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries\color{deeporange},
+  commentstyle=\itshape\color{forestgreen},
+  stringstyle=\color{accentblue},
+  numberstyle=\tiny\color{gray},
+  numbers=left,
+  numbersep=8pt,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+  aboveskip=1em,
+  belowskip=0.8em,
+  xleftmargin=1.5em,
+  framexleftmargin=1.5em,
+  morekeywords={omp, pragma, parallel, for, single, critical, atomic, barrier, reduction, schedule, private, shared, default}
+}
+
+\lstdefinestyle{bashstyle}{
+  language=bash,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeborder},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries\color{deeporange},
+  commentstyle=\itshape\color{forestgreen},
+  breaklines=true,
+  showstringspaces=false,
+  aboveskip=1em,
+  belowskip=0.8em,
+  xleftmargin=0.5em
+}
+
+\lstdefinestyle{outputstyle}{
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeborder},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  showstringspaces=false,
+  aboveskip=1em,
+  belowskip=0.8em,
+  xleftmargin=0.5em
+}
+
+\lstset{style=cstyle}
+
+% ---------- Tableaux ----------
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{array}
+
+% ---------- Maths ----------
+\usepackage{amsmath,amssymb}
+
+% ---------- Divers ----------
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=mainblue,
+  urlcolor=accentblue,
+  citecolor=forestgreen
+}
+
+% ============================================================
+\begin{document}
+
+% ---------- PAGE DE TITRE ----------
+\begin{titlepage}
+\begin{center}
+\vspace*{2cm}
+
+{\Huge\bfseries\color{mainblue} TD2 — Parallélisation OpenMP}\\[0.6cm]
+{\Huge\bfseries\color{mainblue} d'un code de Dynamique Moléculaire}
+
+\vspace{1.5cm}
+
+\textcolor{accentblue}{\rule{0.6\linewidth}{1.5pt}}
+
+\vspace{1.5cm}
+
+{\Large\color{mainblue!80} Programmation parallèle — OpenMP}\\[0.4cm]
+{\large Semestre 4 — \the\year}
+
+\vspace{2cm}
+
+\begin{tcolorbox}[
+  colback=lightblue,
+  colframe=mainblue,
+  width=0.7\linewidth,
+  arc=5pt,
+  boxrule=1.2pt,
+  halign=center
+]
+  {\large\bfseries\color{mainblue} Environnement de développement}\\[0.5em]
+  \begin{tabular}{rl}
+    \textbf{OS}         & macOS (Apple Silicon) \\
+    \textbf{Compilateur} & GCC 15 via Homebrew \\
+    \textbf{Profilage}   & \texttt{sample} (équivalent macOS de \texttt{perf}) \\
+    \textbf{Processeur}  & 4 cœurs Performance + 4 cœurs Efficiency \\
+  \end{tabular}
+\end{tcolorbox}
+
+\vfill
+
+\textcolor{gray}{\small Rapport compilé le \today}
+
+\end{center}
+\end{titlepage}
+
+% ---------- TABLE DES MATIÈRES ----------
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{TD2 — Parallélisation OpenMP d'un code de Dynamique Moléculaire}
+% ============================================================
+
+\begin{notebox}[Note — Environnement macOS]
+Ce TD a été réalisé sur macOS. Quelques adaptations ont été nécessaires par rapport à l'énoncé prévu pour Linux, elles sont expliquées au fil du rapport.
+\end{notebox}
+
+
+% -----------------------------------------------------------
+\subsection{Question 1 : Étude du code et déroulement du programme}
+% -----------------------------------------------------------
+
+\subsubsection{De quoi parle ce code ?}
+
+Le programme simule le comportement d'un ensemble de particules qui interagissent entre elles selon un potentiel de Lennard-Jones. C'est un classique de la dynamique moléculaire : on place des atomes dans une boîte, on leur donne des vitesses initiales, puis on laisse la physique faire son travail pendant un certain nombre de pas de temps.
+
+La taille du système est contrôlée à la compilation par la macro \texttt{NPART} :
+
+\begin{center}
+\rowcolors{2}{lightblue!40}{white}
+\begin{tabular}{lcc}
+\toprule
+\textbf{\color{mainblue}Mode} & \textbf{\color{mainblue}mm} & \textbf{\color{mainblue}Nombre de particules (4×mm\textsuperscript{3})} \\
+\midrule
+\texttt{MINI}   & 7  & 1\,372  \\
+\texttt{MEDIUM} & 10 & 4\,000  \\
+\texttt{MAXI}   & 15 & 13\,500 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Comment le programme se déroule-t-il ?}
+
+En regardant le \texttt{main.c}, on comprend assez vite la structure. Le programme passe par trois grandes phases :
+
+\paragraph{\color{deeporange}1. L'initialisation}
+
+Tout d'abord, on définit les paramètres physiques de la simulation (densité, température de référence, pas de temps \texttt{h}, rayon de coupure \texttt{rcoff}, etc.).
+
+Ensuite, la fonction \texttt{fcc()} place les particules sur un réseau cristallin cubique à faces centrées (FCC). C'est une configuration initiale classique en simulation moléculaire — les atomes sont bien rangés dans la boîte.
+
+Puis, \texttt{mxwell()} attribue des vitesses aléatoires aux particules selon une distribution de Maxwell-Boltzmann, ce qui correspond à un état thermique à la température voulue. Enfin, \texttt{dfill()} met toutes les forces initiales à zéro (ce qui est logique, puisqu'on est sur un réseau parfait, les forces s'annulent par symétrie).
+
+\paragraph{\color{deeporange}2. La boucle principale (20 pas de temps)}
+
+C'est le cœur de la simulation. À chaque pas de temps, on fait dans l'ordre :
+
+\begin{itemize}[leftmargin=2em]
+  \item \textcolor{accentblue}{\texttt{domove()}} : on déplace les particules en utilisant un schéma d'intégration de type Verlet. On applique aussi des conditions aux limites périodiques (si une particule sort par un côté de la boîte, elle rentre par l'autre).
+  \item \textcolor{accentblue}{\texttt{forces()}} : c'est la fonction la plus importante. Elle calcule les forces d'interaction entre toutes les paires de particules, et accumule au passage l'énergie potentielle (\texttt{epot}) et le viriel (\texttt{vir}).
+  \item \textcolor{accentblue}{\texttt{mkekin()}} : met à l'échelle les forces par le pas de temps, met à jour les vitesses, et calcule l'énergie cinétique.
+  \item \textcolor{accentblue}{\texttt{velavg()}} : calcule la vitesse moyenne des particules.
+  \item \textcolor{accentblue}{Thermostat} : pendant les 10 premiers pas, on rééchelonne les vitesses avec \texttt{dscal()} pour maintenir la température autour de la valeur cible (sinon, la température dérive).
+  \item \textcolor{accentblue}{\texttt{prnout()}} : affiche un résumé (énergie cinétique, potentielle, totale, température, pression, vitesse) tous les 5 pas.
+\end{itemize}
+
+\paragraph{\color{deeporange}3. Mesure du temps}
+
+Le temps est mesuré avec \texttt{omp\_get\_wtime()} autour de la boucle principale.
+
+\subsubsection{Les résultats changent-ils entre deux exécutions ?}
+
+Non, les résultats sont parfaitement identiques d'une exécution à l'autre. J'ai lancé le programme deux fois en mode MINI et j'obtiens exactement les mêmes valeurs :
+
+\begin{lstlisting}[style=outputstyle, title={\color{mainblue} Deux exécutions identiques (MINI)}]
+=== Execution 1 (MINI) ===
+      5   1273.0249  -7838.6500  -6565.6250    0.6190   -3.4754    0.1819  39.9
+     10   1484.7930  -7168.6623  -5683.8693    0.7220   -0.9322    0.1337  13.0
+     15   1142.9401  -6801.2750  -5658.3349    0.5558    0.4083    0.1711  32.5
+     20   1072.1641  -6732.9109  -5660.7468    0.5214    0.6807    0.1651  29.9
+
+=== Execution 2 (MINI) ===
+      5   1273.0249  -7838.6500  -6565.6250    0.6190   -3.4754    0.1819  39.9
+     ...  (identique)
+\end{lstlisting}
+
+C'est normal : le générateur de nombres pseudo-aléatoires dans \texttt{random.c} utilise une graine fixe (\texttt{PMOD/ADDEND}). Du coup, la séquence de nombres aléatoires est toujours la même, l'initialisation des vitesses est toujours la même, et comme la simulation est déterministe, tout le déroulement est reproductible.
+
+Par contre, les résultats changent bien sûr quand on passe d'une configuration à une autre (MINI vs MEDIUM vs MAXI), puisque le nombre de particules est différent.
+
+\subsubsection{Et les temps d'exécution ?}
+
+J'observe les temps suivants pour un seul thread :
+
+\begin{center}
+\rowcolors{2}{lightblue!40}{white}
+\begin{tabular}{lcc}
+\toprule
+\textbf{\color{mainblue}Mode} & \textbf{\color{mainblue}Particules} & \textbf{\color{mainblue}Temps} \\
+\midrule
+MINI   & 1\,372  & $\sim$0.19\,s  \\
+MEDIUM & 4\,000  & $\sim$1.19\,s  \\
+MAXI   & 13\,500 & $\sim$12.80\,s \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+On voit que le temps augmente très vite avec le nombre de particules. C'est cohérent : la fonction \texttt{forces()} parcourt toutes les paires $(i, j)$, donc sa complexité est en $\mathcal{O}(n^2)$, et c'est elle qui domine le temps de calcul (on va le voir en Q2).
+
+
+% -----------------------------------------------------------
+\subsection{Question 2 : Profilage et parallélisation de la fonction la plus coûteuse}
+% -----------------------------------------------------------
+
+\subsubsection{Profilage}
+
+L'énoncé demande d'utiliser \texttt{perf record} et \texttt{perf report}. Cependant, \textbf{\texttt{perf} est un outil spécifique à Linux} qui repose sur les compteurs de performance du noyau Linux (\texttt{perf\_events}). Il n'existe tout simplement pas sur macOS.
+
+\begin{lstlisting}[style=bashstyle, title={\color{mainblue} Profilage : Linux vs macOS}]
+# SUR LINUX (ce qui est demande dans l'enonce) :
+perf record -e cpu-clock ./md    # enregistre les echantillons
+perf report                       # affiche le rapport interactif
+
+# SUR macOS (ce que j'ai utilise a la place) :
+./md &                            # lancer en arriere-plan
+sample $! 8 -f rapport.txt       # echantillonner pendant 8 secondes
+\end{lstlisting}
+
+\begin{infobox}[Autre point macOS]
+La commande \texttt{gcc} sur Mac est en réalité Apple Clang, qui ne supporte pas OpenMP. Il faut installer le vrai GCC via Homebrew (\texttt{brew install gcc}), ce qui donne la commande \texttt{gcc-15}.
+\end{infobox}
+
+Voici ce que donne le profilage (avec \texttt{sample} sur macOS, mais \texttt{perf} donnerait le même type de résultat) :
+
+\begin{resultbox}[Résultat du profilage]
+\begin{lstlisting}[style=outputstyle, frame=none, backgroundcolor=\color{resultgreen}]
+Call graph:
+    6149 echantillons au total
+      6141 forces    -> 99.87%
+         5 mkekin    ->  0.08%
+         2 domove    ->  0.03%
+         1 velavg    ->  0.02%
+\end{lstlisting}
+\end{resultbox}
+
+Le résultat est sans appel : \textbf{\textcolor{warnborder}{\texttt{forces()} représente 99.87\% du temps de calcul}}. C'est cette fonction qu'il faut paralléliser en priorité. Les autres fonctions sont négligeables en comparaison.
+
+C'est logique quand on y pense : \texttt{forces()} contient une double boucle sur toutes les paires de particules (complexité $\mathcal{O}(n^2)$), alors que les autres fonctions ne font qu'une simple boucle sur les particules ($\mathcal{O}(n)$).
+
+\subsubsection{Analyse de \texttt{forces()} pour la parallélisation}
+
+Regardons le code de plus près. La boucle extérieure parcourt les particules \texttt{i}, et pour chaque \texttt{i}, la boucle intérieure parcourt les particules \texttt{j > i} pour calculer les interactions par paires.
+
+L'idée naturelle est de paralléliser la boucle extérieure en \texttt{i} avec \texttt{\#pragma omp for}. Mais avant ça, il faut bien identifier le statut de chaque variable pour éviter les bugs de concurrence :
+
+\begin{center}
+\rowcolors{2}{lightblue!40}{white}
+\begin{tabular}{llll}
+\toprule
+\textbf{\color{mainblue}Variable} & \textbf{\color{mainblue}Type d'accès} & \textbf{\color{mainblue}Statut OpenMP} & \textbf{\color{mainblue}Pourquoi ?} \\
+\midrule
+\texttt{x[]} & lecture seule & \texttt{shared} & Positions non modifiées dans \texttt{forces()} \\
+\texttt{f[]} & lecture/écriture & \texttt{shared} mais problématique ! & Voir ci-dessous \\
+\texttt{epot} & accumulation (\texttt{+=}) & \texttt{reduction(+:epot)} & Somme partielle par thread \\
+\texttt{vir} & accumulation (\texttt{-=}) & \texttt{reduction(+:vir)} & Idem \\
+\texttt{fxi, fyi, fzi} & privées & automatic \texttt{private} & Déclarées dans la boucle \\
+\texttt{i} & indice de boucle & \texttt{private} & Géré par \texttt{omp for} \\
+\texttt{j} & indice interne & \texttt{private} & Déclaré dans le corps \\
+\texttt{xx, yy, zz...} & temporaires & \texttt{private} & Déclarées dans le bloc \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Le problème principal : la data race sur \texttt{f[j]}}
+
+C'est le point le plus délicat. Dans la boucle interne, on a ces lignes :
+
+\begin{lstlisting}
+f[j]   -= xx * r148;
+f[j+1] -= yy * r148;
+f[j+2] -= zz * r148;
+\end{lstlisting}
+
+Imaginons que le thread 0 traite la particule \texttt{i=0} et interagit avec \texttt{j=42}, pendant que le thread 1 traite la particule \texttt{i=6} et interagit aussi avec \texttt{j=42}. Les deux threads vont essayer de modifier \texttt{f[42]} en même temps : c'est une \textbf{\textcolor{warnborder}{data race}}, et le résultat sera faux.
+
+Pour \texttt{f[i]}, il n'y a pas de problème car chaque thread a ses propres valeurs de \texttt{i} (réparties par \texttt{omp for}). Mais \texttt{f[j]} peut être touché par n'importe quel thread.
+
+\subsubsection{Solution retenue : tableau local par thread}
+
+Chaque thread travaille sur son propre tableau \texttt{f\_local[]} initialisé à zéro. Pendant le calcul, au lieu d'écrire dans \texttt{f[j]}, on écrit dans \texttt{f\_local[j]}. Il n'y a donc plus aucun conflit. À la fin, on additionne les tableaux locaux dans le tableau partagé \texttt{f[]} via une section \texttt{\#pragma omp critical}.
+
+J'ai vérifié que les résultats restent identiques après parallélisation :
+
+\begin{resultbox}[Vérification de la correction]
+\begin{lstlisting}[style=outputstyle, frame=none, backgroundcolor=\color{resultgreen}]
+1 thread  -> 1072.1641  -6732.9109  -5660.7468   <-- identique au seq.
+4 threads -> 1072.1641  -6732.9109  -5660.7468   <-- identique
+\end{lstlisting}
+\end{resultbox}
+
+
+% -----------------------------------------------------------
+\subsection{Question 3 : Tests des politiques d'ordonnancement}
+% -----------------------------------------------------------
+
+Pour cette question, on utilise \texttt{schedule(runtime)} dans le code et on contrôle la politique via la variable d'environnement \texttt{OMP\_SCHEDULE}. Ça permet de tester différentes politiques sans recompiler.
+
+\subsubsection{Rappel du fonctionnement des différentes politiques}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{\textcolor{deeporange}{\texttt{static}}} : les itérations sont découpées en blocs de taille $N/P$ ($N$ itérations, $P$ threads) et distribuées une fois pour toutes au démarrage, en round-robin. C'est le plus simple et celui avec le moins d'overhead, mais il ne s'adapte pas si la charge n'est pas uniforme.
+  \item \textbf{\textcolor{deeporange}{\texttt{static,k}}} : comme \texttt{static}, mais avec des blocs de taille \texttt{k} au lieu de $N/P$. Avec \texttt{k=1}, chaque thread reçoit les itérations en entrelacement (0 pour thread 0, 1 pour thread 1, 2 pour thread 0, etc.). Ça aide à mieux répartir la charge si elle est déséquilibrée.
+  \item \textbf{\textcolor{deeporange}{\texttt{dynamic}}} : les itérations sont distribuées à la volée --- quand un thread finit son bloc, il en prend un nouveau dans une file d'attente. Très bon pour l'équilibrage de charge, mais l'overhead de la file d'attente peut coûter cher si les blocs sont petits.
+  \item \textbf{\textcolor{deeporange}{\texttt{dynamic,k}}} : comme \texttt{dynamic} avec des blocs de taille \texttt{k}. Plus \texttt{k} est grand, moins il y a d'overhead, mais l'équilibrage est moins fin.
+  \item \textbf{\textcolor{deeporange}{\texttt{guided}}} : similaire à \texttt{dynamic}, mais la taille des blocs décroît au fil du temps (commence avec de gros blocs, finit avec des blocs de taille \texttt{k}). L'idée est de réduire l'overhead au début (gros blocs) tout en gardant un bon équilibrage à la fin (petits blocs).
+\end{itemize}
+
+\subsubsection{Pourquoi l'équilibrage est crucial pour \texttt{forces()} ?}
+
+C'est un point important à comprendre. La boucle interne de \texttt{forces()} fait :
+
+\begin{lstlisting}
+for (j = i+3; j < n3; j += 3) { ... }
+\end{lstlisting}
+
+Quand \texttt{i} est petit (par ex. \texttt{i=0}), la boucle interne parcourt presque toutes les particules. Quand \texttt{i} est grand (vers la fin), la boucle interne ne parcourt que quelques particules. On a donc une \textbf{\textcolor{warnborder}{charge triangulaire}} : les premières itérations sont beaucoup plus lourdes que les dernières.
+
+Avec un \texttt{static} simple, le thread 0 hérite des premières itérations (les plus lourdes) et les derniers threads des itérations légères. Le thread 0 travaille donc beaucoup plus longtemps que les autres : mauvais équilibrage.
+
+\subsubsection{Résultats des tests (\texttt{NPART=MINI}, 1\,372 particules)}
+
+\begin{center}
+\rowcolors{2}{lightblue!40}{white}
+\begin{tabular}{llc}
+\toprule
+\textbf{\color{mainblue}Politique} & \textbf{\color{mainblue}Threads} & \textbf{\color{mainblue}Temps (s)} \\
+\midrule
+static        & 1 & 0.188 \\
+static        & 2 & 0.135 \\
+static        & 4 & 0.094 \\
+static        & 8 & 0.068 \\
+\midrule
+static,1      & 1 & 0.171 \\
+static,1      & 2 & 0.092 \\
+static,1      & 4 & 0.068 \\
+static,1      & 8 & 0.063 \\
+\midrule
+static,10     & 1 & 0.167 \\
+static,10     & 2 & 0.102 \\
+static,10     & 4 & 0.067 \\
+static,10     & 8 & 0.125 \\
+\midrule
+dynamic       & 1 & 0.161 \\
+dynamic       & 2 & 0.086 \\
+dynamic       & 4 & 0.070 \\
+dynamic       & 8 & 0.051 \\
+\midrule
+dynamic,1     & 1 & 0.164 \\
+dynamic,1     & 2 & 0.157 \\
+dynamic,1     & 4 & 0.048 \\
+\rowcolor{resultgreen} dynamic,1     & 8 & \textbf{0.034} $\leftarrow$ \textit{meilleur !} \\
+\midrule
+dynamic,10    & 1 & 0.152 \\
+dynamic,10    & 2 & 0.080 \\
+dynamic,10    & 4 & 0.043 \\
+dynamic,10    & 8 & 0.059 \\
+\midrule
+guided        & 1 & 0.164 \\
+guided        & 2 & 0.124 \\
+guided        & 4 & 0.084 \\
+guided        & 8 & 0.060 \\
+\midrule
+guided,1      & 1 & 0.159 \\
+guided,1      & 2 & 0.124 \\
+guided,1      & 4 & 0.088 \\
+guided,1      & 8 & 0.072 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Ce que j'en retiens}
+
+\textbf{\textcolor{deeporange}{\texttt{static}} classique} est le moins bon, comme on pouvait s'y attendre avec la charge triangulaire. Le premier thread se retrouve avec les itérations les plus lourdes et fait attendre tout le monde.
+
+\textbf{\textcolor{deeporange}{\texttt{static,1}}} (entrelacé) est nettement meilleur. Grâce à l'entrelacement, les itérations lourdes et légères sont mélangées entre les threads. Par exemple, avec 4 threads : le thread 0 a les itérations 0, 4, 8, 12... (un mélange de lourd et léger), au lieu d'avoir seulement 0, 1, 2, 3... (les plus lourdes).
+
+\textbf{\textcolor{deeporange}{\texttt{dynamic,1}}} donne le meilleur résultat global (\textbf{0.034\,s} avec 8 threads). C'est logique : chaque thread prend une itération dès qu'il est libre, ce qui garantit un équilibrage quasi parfait. L'overhead de la file d'attente est compensé par le gain d'équilibrage.
+
+\textbf{\textcolor{deeporange}{\texttt{guided}}} donne des résultats intermédiaires. Les blocs décroissants aident un peu, mais c'est moins bien adapté que \texttt{dynamic,1} pour notre charge triangulaire.
+
+En termes de speedup avec \texttt{dynamic,1} : on passe de 0.164\,s (1 thread) à 0.034\,s (8 threads), soit un \textbf{speedup d'environ $4.8\times$}. C'est correct pour un Mac avec ses c\oe urs Performance + Efficiency (les c\oe urs E sont plus lents, ce qui limite un peu).
+
+
+% -----------------------------------------------------------
+\subsection{Question 4 : Version 1 — Boucle extérieure parallélisée avec \texttt{single}}
+% -----------------------------------------------------------
+
+\subsubsection{L'idée}
+
+Jusqu'ici (Q2), la région parallèle \texttt{\#pragma omp parallel} était \textbf{dans} \texttt{forces()}. Ça veut dire qu'à chaque pas de temps, les threads sont créés, font le calcul des forces, puis sont détruits. Et au pas de temps suivant, on recommence... On les crée/détruit 20 fois, ce qui génère un overhead inutile.
+
+L'idée de la Q4 est de mettre la région parallèle \textbf{autour de la boucle temporelle} dans \texttt{main.c}. Les threads sont créés une seule fois au début et restent actifs pendant toute la simulation.
+
+Dans cette version 1, seule \texttt{forces()} est réellement parallélisée (elle contient un \texttt{\#pragma omp for} à l'intérieur). Les autres fonctions (\texttt{domove}, \texttt{mkekin}, \texttt{velavg}, etc.) sont exécutées par un seul thread grâce à \texttt{\#pragma omp single} — les autres threads attendent à la barrière implicite.
+
+\subsubsection{Structure du code}
+
+\begin{lstlisting}[title={\color{mainblue} Version Q4 : \texttt{single} autour des fonctions non parallelisees}]
+#pragma omp parallel default(shared) private(move)
+{
+  for (move = 1; move <= movemx; move++) {
+
+    #pragma omp single
+    domove(3*npart, x, vh, f, side);    // un seul thread
+
+    forces(npart, x, f, side, rcoff);   // tous les threads (omp for interne)
+
+    #pragma omp single
+    {
+      ekin = mkekin(...);               // un seul thread
+      vel  = velavg(...);               // un seul thread
+      if (...) { dscal(...); ... }      // un seul thread
+      if (...) prnout(...);             // un seul thread
+    }
+  }
+}
+\end{lstlisting}
+
+\subsubsection{Avantages et limites}
+
+\begin{infobox}[Avantage]
+Suppression de l'\textbf{overhead de création/destruction des threads} à chaque pas de temps.
+\end{infobox}
+
+La limite, c'est que pendant l'exécution de \texttt{domove}, \texttt{mkekin}, \texttt{velavg}, etc., tous les threads sauf un sont \textbf{inactifs}. Certes, ces fonctions ne représentent que 0.13\% du temps total, mais quand on augmente le nombre de threads, cette partie séquentielle commence à peser (c'est la \textbf{loi d'Amdahl}). C'est ce qu'on améliore en Q5.
+
+\subsection{Question 5 : Version 2 — Toutes les fonctions parallélisées}
+
+\subsubsection{Le principe}
+
+On reprend la structure de Q4 (une seule région parallèle autour de la boucle), mais cette fois \textbf{toutes les fonctions} du corps de boucle contiennent un \texttt{\#pragma omp for} en interne. Plus besoin de \texttt{single} (sauf pour le \texttt{prnout} qui fait du \texttt{printf}).
+
+Voici ce qui a été fait dans chaque fonction :
+
+\begin{center}
+\rowcolors{2}{lightblue!40}{white}
+\begin{tabular}{lll}
+\toprule
+\textbf{\color{mainblue}Fonction} & \textbf{\color{mainblue}Comment c'est parallélisé} & \textbf{\color{mainblue}Difficultés} \\
+\midrule
+\texttt{domove} & \texttt{\#pragma omp for} direct & Aucune --- itérations indépendantes \\
+\texttt{forces} & \texttt{\#pragma omp for} + tableau thread-indexé (Q6) & Data race sur \texttt{f[j]} (voir Q2 et Q6) \\
+\texttt{mkekin} & \texttt{\#pragma omp for} + somme partielle & Réduction sur variable locale (voir ci-dessous) \\
+\texttt{velavg} & \texttt{\#pragma omp for} + somme partielle & Idem + variable globale \texttt{count} \\
+\texttt{dscal}  & \texttt{\#pragma omp for} direct & Chaque \texttt{sx[i] *= sa} est indépendant \\
+\texttt{prnout} & \texttt{\#pragma omp single} & On ne parallélise pas du \texttt{printf} ! \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Problème rencontré avec GCC : \texorpdfstring{\texttt{"reduction variable is private in outer context"}}{reduction variable is private in outer context}}
+
+En essayant de paralléliser \texttt{mkekin()}, j'ai d'abord tenté d'utiliser une réduction classique :
+
+\begin{lstlisting}[title={\color{warnborder} Tentative qui echoue}]
+double mkekin(...) {
+    double sum = 0.0;
+    #pragma omp for reduction(+:sum)   // ERREUR !
+    for (i = 0; ...) { sum += ...; }
+    return sum / hsq;
+}
+\end{lstlisting}
+
+\begin{warnbox}[Erreur GCC]
+\texttt{error: reduction variable 'sum' is private in outer context}
+
+Le problème : \texttt{sum} est une variable locale de \texttt{mkekin()}, et comme \texttt{mkekin()} est appelée depuis l'intérieur d'une région parallèle (celle de \texttt{main.c}), cette variable locale est \textbf{implicitement privée}. Or, OpenMP ne permet pas de faire une réduction sur une variable déjà privée : il ne saurait pas comment combiner les résultats entre les threads.
+\end{warnbox}
+
+\subsubsection{Solution trouvée}
+
+J'utilise une \textbf{variable \texttt{static}} (qui est partagée entre les threads car elle est en mémoire globale) et des \textbf{sommes partielles privées} :
+
+\begin{lstlisting}[title={\color{resultborder} Solution : variable static + sommes partielles + atomic}]
+double mkekin(...) {
+    double partial_sum = 0.0;       // chaque thread a la sienne
+    static double total_sum;         // partagee (static -> globale)
+
+    #pragma omp single
+    total_sum = 0.0;                 // un seul thread remet a zero
+
+    #pragma omp for schedule(static)
+    for (i = 0; i < 3*npart; i++) {
+        f[i] *= hsq2;
+        vh[i] += f[i];
+        partial_sum += vh[i] * vh[i];
+    }
+
+    #pragma omp atomic               // une seule fois par thread !
+    total_sum += partial_sum;
+
+    #pragma omp barrier              // on attend tout le monde
+
+    return total_sum / hsq;          // tous retournent la meme valeur
+}
+\end{lstlisting}
+
+Le \texttt{\#pragma omp atomic} n'est exécuté qu'une seule fois par thread (pas à chaque itération de la boucle), donc l'overhead est négligeable.
+
+La même technique est utilisée dans \texttt{velavg()} pour les variables \texttt{vel} et \texttt{count}.
+
+
+% -----------------------------------------------------------
+\subsection{Question 6 : Suppression du goulot d'étranglement (\texttt{critical} $\to$ tableau indexé par thread)}
+% -----------------------------------------------------------
+
+\subsubsection{Le problème avec la version Q2}
+
+Dans la première parallélisation de \texttt{forces()} (Q2), on utilisait un tableau local \texttt{f\_local[]} par thread, puis on faisait une accumulation finale avec \texttt{\#pragma omp critical} :
+
+\begin{lstlisting}[title={\color{warnborder} Version Q2 --- goulot d'etranglement}]
+// Version Q2 -- chaque thread fait ca a la fin :
+#pragma omp critical
+{
+    for (k = 0; k < n3; k++)
+        f[k] += f_local[k];
+}
+\end{lstlisting}
+
+Le souci, c'est que \texttt{critical} est un \textbf{verrou} : un seul thread à la fois peut exécuter ce bloc. Avec 8 threads, les threads passent les uns après les autres, chacun parcourant le tableau de taille \texttt{n3}. Le temps total d'accumulation est donc $\mathcal{O}(\texttt{n3} \times \texttt{nthreads})$ en séquentiel : c'est un goulot d'étranglement qui limite la scalabilité.
+
+L'énoncé nous dit d'ailleurs que \textit{"les instructions atomic constituent un goulot d'étranglement sur la plupart des systèmes"}, et \texttt{critical} est encore pire que \texttt{atomic} puisqu'il bloque un bloc entier.
+
+\subsubsection{La solution : un tableau 2D indexé par le numéro de thread}
+
+Au lieu que chaque thread alloue son propre \texttt{f\_local[]}, on alloue un seul grand tableau partagé \texttt{f\_all} de taille $\texttt{nthreads} \times \texttt{n3}$. Chaque thread écrit dans \textbf{sa tranche} :
+
+\begin{lstlisting}[style=outputstyle, title={\color{mainblue} Disposition memoire du tableau f\_all}]
+f_all :  [ tranche thread 0 ][ tranche thread 1 ][ ... ][ tranche P-1 ]
+          ^                    ^
+          f_all + 0*n3         f_all + 1*n3
+\end{lstlisting}
+
+Le thread \texttt{tid} écrit dans \texttt{f\_all[tid * n3 + j]} au lieu de \texttt{f[j]}. Comme chaque thread écrit dans une zone mémoire différente, il n'y a \textbf{aucun conflit, aucun besoin de synchronisation} pendant le calcul.
+
+Et surtout, l'accumulation finale est elle-même \textbf{parallélisable} :
+
+\begin{lstlisting}[title={\color{resultborder} Accumulation parallele (Q6)}]
+#pragma omp for schedule(static)
+for (i = 0; i < n3; i++) {
+    for (t = 0; t < nthreads; t++)
+        f[i] += f_all[t * n3 + i];
+}
+\end{lstlisting}
+
+Chaque thread accumule une portion du tableau \texttt{f[]}. Pas de \texttt{critical}, pas de \texttt{atomic}. Le temps d'accumulation est maintenant $\mathcal{O}(\texttt{n3})$ en parallèle, au lieu de $\mathcal{O}(\texttt{n3} \times \texttt{nthreads})$ en séquentiel.
+
+\subsubsection{Comparaison entre les deux approches}
+
+\begin{center}
+\rowcolors{2}{lightblue!40}{white}
+\begin{tabular}{lll}
+\toprule
+ & \textbf{\color{mainblue}Q2 (avec \texttt{critical})} & \textbf{\color{mainblue}Q6 (tableau par thread)} \\
+\midrule
+Pendant le calcul & Pas de conflit \checkmark & Pas de conflit \checkmark \\
+Accumulation finale & Séquentielle (\texttt{critical}) $\times$ & Parallèle (\texttt{omp for}) \checkmark \\
+Mémoire & $\mathcal{O}(\texttt{n3})$ par thread & $\mathcal{O}(\texttt{n3} \times \texttt{nthreads})$ --- idem en pratique \\
+Scalabilité & Limitée par la section critique & Bonne \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{infobox}[Détail d'implémentation]
+Le tableau \texttt{f\_all} est déclaré \texttt{static} dans \texttt{forces()} pour ne pas le réallouer à chaque pas de temps (la fonction est appelée 20 fois). On ne le réalloue que si le nombre de threads change.
+\end{infobox}
+
+\subsection{Question 7 : Étude d'extensibilité (\texttt{NPART=MAXI})}
+
+Pour cette étude, j'ai compilé en mode \texttt{NPART=MAXI} (13\,500 particules) et mesuré le temps d'exécution en faisant varier le nombre de threads de 1 à 8, avec la politique \texttt{dynamic,1} qui avait donné les meilleurs résultats en Q3.
+
+\subsubsection{Résultats}
+
+\begin{center}
+\rowcolors{2}{lightblue!40}{white}
+\begin{tabular}{lccc}
+\toprule
+\textbf{\color{mainblue}Threads} & \textbf{\color{mainblue}Temps (s)} & \textbf{\color{mainblue}Speedup} & \textbf{\color{mainblue}Efficacité} \\
+\midrule
+1 & 12.78 & $1.00\times$ & 100.0\% \\
+2 &  6.54 & $1.95\times$ &  97.6\% \\
+3 &  4.50 & $2.84\times$ &  94.6\% \\
+4 &  3.58 & $3.57\times$ &  89.2\% \\
+5 &  3.33 & $3.84\times$ &  76.8\% \\
+6 &  3.07 & $4.16\times$ &  69.4\% \\
+7 &  2.88 & $4.44\times$ &  63.4\% \\
+\rowcolor{resultgreen} 8 &  2.65 & $4.83\times$ &  60.4\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{infobox}[Rappel]
+Le speedup : $S_P = T_1 / T_P$ \quad et l'efficacité : $E_P = S_P / P$.
+\end{infobox}
+
+\subsubsection{Analyse des résultats}
+
+\textbf{\textcolor{resultborder}{Jusqu'à 4 threads}}, le speedup est très bon : on atteint $3.57\times$ pour 4 threads, soit une efficacité de 89\%. C'est proche du linéaire, ce qui montre que \texttt{forces()} se parallélise bien et que l'overhead de synchronisation reste faible.
+
+\textbf{\textcolor{warnborder}{Au-delà de 4 threads}}, on observe un net décrochage. On passe de 89\% d'efficacité (4 threads) à seulement 60\% (8 threads). Plusieurs raisons expliquent ça :
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{\textcolor{mainblue}{La loi d'Amdahl.}} Même si \texttt{forces()} représente 99.87\% du temps, il reste 0.13\% de code séquentiel (les barrières, les \texttt{single}, les \texttt{atomic}). En théorie, le speedup maximal avec 99.87\% parallèle serait :
+  $$
+  S_{\max} = \frac{1}{0.0013 + \frac{0.9987}{P}} \approx 7.9 \quad \text{pour } P = 8
+  $$
+  On est loin en dessous de ce maximum théorique ($4.83$ vs $7.9$), ce qui veut dire que d'autres facteurs jouent aussi.
+
+  \item \textbf{\textcolor{mainblue}{L'architecture Apple Silicon.}} Mon Mac a un processeur avec 4 cœurs « Performance » (rapides) et 4 cœurs « Efficiency » (plus lents, environ $2\times$ moins rapides). Avec 4 threads, on utilise les 4 cœurs P et tout va bien. Avec 8 threads, les 4 threads supplémentaires tournent sur les cœurs E qui sont plus lents, et comme il y a des barrières de synchronisation dans le code, les threads rapides doivent \textbf{attendre} les threads lents. Ça plombe l'efficacité. Sur une machine Linux avec 8 cœurs homogènes, les résultats seraient sûrement meilleurs.
+
+  \item \textbf{\textcolor{mainblue}{L'overhead de synchronisation.}} Avec plus de threads, les \texttt{\#pragma omp barrier}, \texttt{atomic}, et la distribution des itérations par \texttt{dynamic} coûtent un peu plus cher (plus de contention sur les accès mémoire partagée).
+
+  \item \textbf{\textcolor{mainblue}{La bande passante mémoire.}} Le tableau \texttt{f\_all} fait $\texttt{8 threads} \times 40\,500 \text{ doubles} \approx 2.5$ Mo. Ça commence à sortir du cache L2, ce qui implique des accès mémoire plus lents.
+\end{enumerate}
+
+\subsubsection{Conclusion}
+
+Le code se parallélise bien pour un nombre modéré de threads (2 à 4), avec un speedup quasi-linéaire. Au-delà, l'architecture hétérogène de mon Mac et les synchronisations limitent les gains. Sur une machine Linux avec 8 cœurs identiques, on obtiendrait probablement un speedup plus proche des $7.9\times$ théoriques.
+
+\begin{resultbox}[Ce que je retiens de ce TD]
+\begin{itemize}[leftmargin=1.5em]
+  \item La parallélisation de \texttt{forces()} est de loin la plus importante (99.87\% du temps) --- c'est le premier truc à faire.
+  \item L'analyse des data races est essentielle : le \texttt{f[j]} m'aurait donné des résultats faux si je n'avais pas utilisé un tableau local.
+  \item Les \texttt{critical}/\texttt{atomic} sont pratiques mais peuvent devenir des goulots d'étranglement $\to$ le tableau indexé par thread (Q6) est une meilleure solution.
+  \item Paralléliser les petites fonctions (Q5) apporte peu en soi, mais améliore la scalabilité en réduisant la fraction séquentielle.
+\end{itemize}
+\end{resultbox}
+
+\end{document}
+

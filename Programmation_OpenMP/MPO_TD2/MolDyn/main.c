@@ -127,42 +127,122 @@ int main(){
 
      start = secnds(); 
 
+  /*
+   * =================================================================
+   *  Q4 (Version 1) : Région parallèle ouverte UNE SEULE FOIS.
+   *    - forces()  → parallèle (#pragma omp for interne)
+   *    - domove, mkekin, velavg, dscal, prnout → #pragma omp single
+   *    Avantage : évite de recréer les threads à chaque appel de forces.
+   *
+   *  Q5 (Version 2) : TOUTES les fonctions sont parallélisées.
+   *    - domove, mkekin, velavg, dscal → #pragma omp for interne
+   *    - forces  → #pragma omp for interne
+   *    - prnout  → #pragma omp single (I/O non parallélisable)
+   *    Avantage : on parallélise aussi les fonctions auxiliaires.
+   *
+   *  La version active ci-dessous implémente Q5 (Version 2).
+   * =================================================================
+   */
 
-    for (move=1; move<=movemx; move++) {
+  /*
+   * ===== VERSION 1 (Q4) — alternative à décommenter ===============
+   *
+   * #pragma omp parallel default(shared) private(move)
+   * {
+   *   for (move=1; move<=movemx; move++) {
+   *
+   *     #pragma omp single
+   *     domove(3*npart, x, vh, f, side);
+   *
+   *     forces(npart, x, f, side, rcoff);
+   *
+   *     #pragma omp single
+   *     {
+   *       ekin=mkekin(npart, f, vh, hsq2, hsq);
+   *       vel=velavg(npart, vh, vaver, h);
+   *       if (move<istop && fmod(move, irep)==0) {
+   *         sc=sqrt(tref/(tscale*ekin));
+   *         dscal(3*npart, sc, vh, 1);
+   *         ekin=tref/tscale;
+   *       }
+   *       if (fmod(move, iprint)==0)
+   *         prnout(move, ekin, epot, tscale, vir, vel, count, npart, den);
+   *     }
+   *   }
+   * }
+   *
+   * ===== FIN VERSION 1 (Q4) =======================================
+   */
 
-    /*
-     *  Move the particles and partially update velocities
-     */
-      domove(3*npart, x, vh, f, side);
+    /* ===== VERSION 2 (Q5) — active ================================ */
+    #pragma omp parallel default(shared) private(move)
+    {
+      double my_ekin, my_vel;  /* privées à chaque thread */
 
-    /*
-     *  Compute forces in the new positions and accumulate the virial
-     *  and potential energy.
-     */
-      forces(npart, x, f, side, rcoff);
+      for (move=1; move<=movemx; move++) {
 
-    /*
-     *  Scale forces, complete update of velocities and compute k.e.
-     */
-      ekin=mkekin(npart, f, vh, hsq2, hsq);
+      /*
+       *  Move the particles and partially update velocities
+       *  Q5 : domove utilise #pragma omp for en interne
+       */
+        domove(3*npart, x, vh, f, side);
 
-    /*
-     *  Average the velocity and temperature scale if desired
-     */
-      vel=velavg(npart, vh, vaver, h);
-      if (move<istop && fmod(move, irep)==0) {
-        sc=sqrt(tref/(tscale*ekin));
-        dscal(3*npart, sc, vh, 1);
-        ekin=tref/tscale;
+      /*
+       *  Compute forces in the new positions and accumulate the virial
+       *  and potential energy.
+       *  Q6 : forces utilise un tableau indexé par thread (pas de critical)
+       */
+        forces(npart, x, f, side, rcoff);
+
+      /*
+       *  Scale forces, complete update of velocities and compute k.e.
+       *  Q5 : mkekin utilise #pragma omp for reduction en interne
+       *  Chaque thread obtient le même résultat via la réduction.
+       */
+        my_ekin=mkekin(npart, f, vh, hsq2, hsq);
+
+      /*
+       *  Average the velocity and temperature scale if desired
+       *  Q5 : velavg utilise #pragma omp for reduction en interne
+       */
+        my_vel=velavg(npart, vh, vaver, h);
+
+      /*
+       *  Un seul thread met à jour les variables partagées
+       *  (évite la data race de plusieurs threads écrivant dans ekin/vel)
+       */
+        #pragma omp single
+        {
+          ekin = my_ekin;
+          vel  = my_vel;
+        }
+        /* Barrière implicite → tous les threads voient ekin et vel */
+
+        if (move<istop && fmod(move, irep)==0) {
+          #pragma omp single
+          sc=sqrt(tref/(tscale*ekin));
+          /* Barrière implicite → tous les threads voient sc */
+
+          dscal(3*npart, sc, vh, 1);  /* Q5 : parallélisé */
+          /* Barrière implicite après omp for dans dscal */
+
+          #pragma omp single
+          ekin=tref/tscale;
+        }
+
+      /*
+       *  Sum to get full potential energy and virial
+       *  prnout fait du I/O (printf) → un seul thread
+       */
+        #pragma omp single
+        {
+          if (fmod(move, iprint)==0)
+            prnout(move, ekin, epot, tscale, vir, vel, count, npart, den);
+        }
+
       }
-
-    /*
-     *  Sum to get full potential energy and virial
-     */
-      if (fmod(move, iprint)==0)
-        prnout(move, ekin, epot, tscale, vir, vel, count, npart, den);
-      
-    }
+    } /* fin de la région parallèle Q5 */
+    /* ===== FIN VERSION 2 (Q5) ====================================== */
 
     time = secnds() - start;  
 

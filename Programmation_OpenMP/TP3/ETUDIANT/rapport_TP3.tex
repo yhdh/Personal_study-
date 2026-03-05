@@ -1,0 +1,324 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{caption}
+
+\geometry{margin=2.5cm}
+
+\lstdefinestyle{cstyle}{
+  language=C,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{red},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  frame=single,
+  breaklines=true,
+  tabsize=2,
+  showstringspaces=false,
+  morekeywords={uint64_t, CSRMatrix_t, pragma, omp}
+}
+
+\lstdefinestyle{bashstyle}{
+  language=bash,
+  basicstyle=\ttfamily\small,
+  frame=single,
+  breaklines=true,
+  showstringspaces=false
+}
+
+\title{\textbf{Rapport TP3 --- Parallélisation par tâches OpenMP}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Calcul de $\pi$ par Monte Carlo}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Q.1 --- Programme parallèle à base de tâches OpenMP 3.0}
+
+\subsubsection{Principe}
+
+On tire aléatoirement $N$ points $(x, y) \in [0,1]^2$. Un point est dans le quart de cercle si $x^2 + y^2 \leq 1$. La proportion de points dans le cercle tend vers $\frac{\pi}{4}$, d'où~:
+\[
+\pi \approx 4 \times \frac{\text{nb points dans le cercle}}{\text{nb total de points}}
+\]
+
+\subsubsection{Implémentation (\texttt{Pi\_MT/pi\_sequentiel.c})}
+
+La parallélisation utilise des \textbf{tâches OpenMP} selon le schéma suivant~:
+
+\begin{lstlisting}[style=cstyle]
+#pragma omp parallel
+{
+  #pragma omp single
+  {
+    for (int t = 0; t < nthreads * N_TASKS_PER_THREAD; t++)
+    {
+      #pragma omp task firstprivate(t)
+      {
+        unsigned int seed = (unsigned int)(t * 31 + 2020);
+        uint64_t local_count = 0;
+        double x, y;
+
+        for (int k = 0; k < N_TRIALS_PER_TASK; k++)
+        {
+          x = rand_r(&seed) / (double)RAND_MAX;
+          y = rand_r(&seed) / (double)RAND_MAX;
+          local_count += (((x * x) + (y * y)) <= 1.0);
+        }
+
+        #pragma omp atomic
+        count += local_count;
+      }
+    }
+  }
+}
+\end{lstlisting}
+
+\subsubsection{Points clés de l'implémentation}
+
+\begin{enumerate}
+  \item \textbf{\texttt{\#pragma omp single}}~: un seul thread crée l'ensemble des tâches~; les autres threads les exécutent au fur et à mesure. Sans \texttt{single}, chaque thread créerait ses propres tâches, multipliant le travail.
+
+  \item \textbf{\texttt{rand\_r(\&seed)} au lieu de \texttt{rand()}}~: la fonction \texttt{rand()} utilise un état global partagé et n'est pas thread-safe. \texttt{rand\_r()} prend une graine locale en paramètre, éliminant toute \emph{data race}.
+
+  \item \textbf{\texttt{firstprivate(t)}}~: chaque tâche reçoit sa propre copie de \texttt{t} pour calculer une graine unique \texttt{seed = t * 31 + 2020}, garantissant des séquences aléatoires différentes.
+
+  \item \textbf{Variables \texttt{x}, \texttt{y} locales} à chaque tâche (déclarées dans le bloc \texttt{task}), évitant tout conflit entre threads.
+
+  \item \textbf{\texttt{\#pragma omp atomic}}~: accumulation thread-safe du compteur \texttt{count} sans utiliser de section critique (plus léger qu'un \texttt{critical}).
+
+  \item \textbf{Nombre total de tâches} = \texttt{nthreads $\times$ N\_TASKS\_PER\_THREAD}, chacune effectuant \texttt{N\_TRIALS\_PER\_TASK} tirages.
+\end{enumerate}
+
+\subsubsection{Résultats (4 threads, 1000 tâches/thread, 10\,000 tirages/tâche)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Métrique} & \textbf{Valeur} \\
+\midrule
+Points totaux             & 40\,000\,000 \\
+Points dans le cercle     & 31\,415\,625 \\
+$\pi$ approximé           & \textbf{3.141563} \\
+Temps d'exécution         & 0.34\,s \\
+\bottomrule
+\end{tabular}
+\caption{Résultats du calcul de $\pi$ par Monte Carlo.}
+\end{table}
+
+L'approximation est très proche de la valeur réelle $\pi \approx 3.141593$.
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Sparse Matrix Vector Kernel (SpMV)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Format CSR (Compressed Sparse Row)}
+
+Une matrice creuse de taille $N \times N$ est stockée par trois tableaux~:
+\begin{itemize}
+  \item \textbf{\texttt{values}} (taille NNZ)~: valeurs non nulles, rangées ligne par ligne.
+  \item \textbf{\texttt{JA}} (taille NNZ)~: indice de colonne de chaque valeur.
+  \item \textbf{\texttt{IA}} (taille $N+1$)~: \texttt{IA[i]} pointe vers le début de la ligne $i$ dans \texttt{values} et \texttt{JA}.
+\end{itemize}
+
+Pour la ligne $i$, les éléments non nuls sont aux indices \texttt{IA[i]} à \texttt{IA[i+1]-1} dans \texttt{values} et \texttt{JA}.
+
+%----------------------------------------------------------------------
+\subsection{Q.2 --- Produit matrice creuse--vecteur séquentiel}
+
+\subsubsection{Implémentation (\texttt{CSRMatrix.c})}
+
+\begin{lstlisting}[style=cstyle]
+void mult_CSR(CSRMatrix_t* A, double const* x, double* y)
+{
+  int N = A->m_nrows;
+  uint64_t* ia = A->m_ia;
+  uint64_t* ja = A->m_ja;
+  double*   val = A->m_values;
+
+  for (int i = 0; i < N; i++) {
+    double sum = 0.0;
+    for (uint64_t k = ia[i]; k < ia[i+1]; k++) {
+      sum += val[k] * x[ja[k]];
+    }
+    y[i] = sum;
+  }
+}
+\end{lstlisting}
+
+\subsubsection{Explication}
+
+Pour chaque ligne $i$~:
+\begin{enumerate}
+  \item On parcourt les éléments non nuls de cette ligne, indexés de \texttt{ia[i]} à \texttt{ia[i+1]-1}.
+  \item Pour chaque élément $k$, on multiplie la valeur \texttt{val[k]} par la composante correspondante du vecteur \texttt{x[ja[k]]}.
+  \item La somme est accumulée dans \texttt{y[i]}.
+\end{enumerate}
+
+Le format CSR permet un accès séquentiel aux valeurs et aux indices de colonnes, ce qui est favorable au cache pour le parcours ligne par ligne.
+
+\subsubsection{Résultats séquentiels (grille $1000 \times 1000$, 20 itérations)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Métrique} & \textbf{Valeur} \\
+\midrule
+NROWS                     & 1\,000\,000 \\
+NNZ                       & 4\,996\,000 \\
+NORME Y                   & 3.70 \\
+Temps moyen / itération   & 6.9\,ms \\
+Performance               & 1\,441 MFlops \\
+\bottomrule
+\end{tabular}
+\caption{Résultats du SpMV séquentiel.}
+\end{table}
+
+%----------------------------------------------------------------------
+\subsection{Q.3 --- Parallélisation par tâches OpenMP 4.0}
+
+\subsubsection{Implémentation (\texttt{CSRMatrix.c})}
+
+\begin{lstlisting}[style=cstyle]
+void mult_CSR_task(CSRMatrix_t* A, double const* x, double* y,
+                   int nb_tasks)
+{
+  int N = A->m_nrows;
+  uint64_t* ia = A->m_ia;
+  uint64_t* ja = A->m_ja;
+  double*   val = A->m_values;
+  int block = (N + nb_tasks - 1) / nb_tasks;
+
+  #pragma omp parallel
+  {
+    #pragma omp single
+    {
+      for (int t = 0; t < nb_tasks; t++) {
+        #pragma omp task firstprivate(t)
+        {
+          int istart = t * block;
+          int iend   = istart + block;
+          if (iend > N) iend = N;
+
+          for (int i = istart; i < iend; i++) {
+            double sum = 0.0;
+            for (uint64_t k = ia[i]; k < ia[i+1]; k++) {
+              sum += val[k] * x[ja[k]];
+            }
+            y[i] = sum;
+          }
+        }
+      }
+    }
+  }
+}
+\end{lstlisting}
+
+\subsubsection{Explication}
+
+\begin{enumerate}
+  \item \textbf{Découpage en blocs}~: les $N$ lignes sont réparties en \texttt{nb\_tasks} blocs de taille $\texttt{block} = \lceil N / \texttt{nb\_tasks} \rceil$. Chaque tâche traite les lignes $[t \times \texttt{block},\; (t+1) \times \texttt{block}[$.
+
+  \item \textbf{\texttt{\#pragma omp parallel} + \texttt{\#pragma omp single}}~: un seul thread crée les tâches~; tous les threads (y compris le créateur) participent à leur exécution.
+
+  \item \textbf{\texttt{\#pragma omp task firstprivate(t)}}~: chaque tâche reçoit sa propre copie de \texttt{t} pour calculer ses bornes \texttt{istart}/\texttt{iend}.
+
+  \item \textbf{Pas de synchronisation sur \texttt{y}}~: chaque tâche écrit dans un sous-ensemble disjoint de \texttt{y} (lignes différentes), il n'y a donc aucun conflit d'écriture.
+
+  \item \textbf{Surcharge de tâches}~: on utilise \texttt{nb\_tasks = 4 $\times$ nthreads} plutôt que \texttt{nthreads} pour améliorer l'équilibrage. Si certaines tâches terminent plus vite (lignes avec moins de non-zéros), les threads libérés prennent immédiatement les tâches restantes.
+\end{enumerate}
+
+\subsubsection{Résultats (grille $1000 \times 1000$, 20 itérations, 4 threads)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Métrique} & \textbf{Séquentiel} & \textbf{Tâches OpenMP} \\
+\midrule
+NORME Y               & 3.70       & 3.70 \\
+Temps moyen            & 6.9\,ms    & 6.1\,ms \\
+MFlops                 & 1\,441     & 1\,634 \\
+\textbf{Speedup}       & 1.0x       & \textbf{1.13x} \\
+\bottomrule
+\end{tabular}
+\caption{Comparaison séquentiel vs.\ tâches OpenMP pour le SpMV.}
+\end{table}
+
+Les deux versions produisent le même résultat (NORME Y identique), ce qui valide la correction de l'implémentation parallèle.
+
+%----------------------------------------------------------------------
+\subsection{Q.4 --- Avantages de la parallélisation par tâches}
+
+La parallélisation par tâches OpenMP du SpMV apporte plusieurs avantages par rapport à une parallélisation classique par \texttt{\#pragma omp parallel for}~:
+
+\subsubsection{1. Équilibrage dynamique de charge}
+
+Dans un Laplacien 2D, les lignes de bord ont 3--4 éléments non nuls tandis que les lignes intérieures en ont 5. Un découpage statique (par \texttt{schedule(static)}) peut créer un déséquilibre si les premiers ou derniers threads héritent de lignes plus légères. Avec les tâches, le runtime OpenMP distribue dynamiquement les tâches aux threads libres~: dès qu'un thread termine une tâche, il en prend une nouvelle dans la file d'attente. En créant plus de tâches que de threads (surcharge), l'équilibrage est naturellement meilleur.
+
+\subsubsection{2. Flexibilité et composabilité}
+
+Les tâches permettent de composer facilement le parallélisme avec d'autres parties du programme. On peut imbriquer des tâches ou les combiner avec d'autres patterns (producteur-consommateur, pipelines) sans restructurer le code. C'est particulièrement utile dans un solveur itératif où le SpMV n'est qu'une étape parmi d'autres.
+
+\subsubsection{3. Granularité ajustable}
+
+Le paramètre \texttt{nb\_tasks} permet de contrôler finement la granularité~:
+\begin{itemize}
+  \item \textbf{Peu de tâches} ($=$ nthreads)~: faible overhead mais équilibrage limité.
+  \item \textbf{Beaucoup de tâches} ($\gg$ nthreads)~: meilleur équilibrage mais overhead de création/ordonnancement plus élevé.
+\end{itemize}
+On peut ainsi trouver le compromis optimal pour chaque configuration matrice/architecture.
+
+\subsubsection{4. Compatibilité avec des matrices irrégulières}
+
+Pour des matrices issues de maillages non structurés (nombre de non-zéros très variable par ligne), l'approche par tâches est particulièrement adaptée car elle absorbe naturellement l'irrégularité de la charge.
+
+\subsubsection{Limites observées}
+
+Le speedup modeste (1.13x avec 4 threads) s'explique par le fait que le SpMV est un algorithme \textbf{memory-bound}~: le facteur limitant n'est pas la puissance de calcul mais la \textbf{bande passante mémoire}. Chaque élément non nul nécessite un accès indirect à \texttt{x[ja[k]]}, ce qui provoque des défauts de cache. Ajouter des threads ne résout pas ce goulot d'étranglement mémoire. Le speedup réel dépend donc de la bande passante disponible plutôt que du nombre de c\oe urs.
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Compilation et exécution}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Pi Monte Carlo}
+
+\begin{lstlisting}[style=bashstyle]
+cd Pi_MT
+make clean && make
+OMP_NUM_THREADS=4 ./pi.exe
+\end{lstlisting}
+
+\subsection{SpMV}
+
+\begin{lstlisting}[style=bashstyle]
+cd SpMV
+make clean && make
+OMP_NUM_THREADS=4 ./spmv.exe 1000 1000 20
+\end{lstlisting}
+
+Le premier et deuxième arguments sont les dimensions de la grille ($n_x$, $n_y$), le troisième est le nombre d'itérations.
+
+\end{document}
