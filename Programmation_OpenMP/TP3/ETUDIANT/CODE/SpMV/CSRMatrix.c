@@ -52,7 +52,7 @@ void mult_CSR_task(CSRMatrix_t* A, double const* x, double* y, int nb_tasks)
   uint64_t* ia = A->m_ia;
   uint64_t* ja = A->m_ja;
   double*   val = A->m_values;
-  int block = (N + nb_tasks - 1) / nb_tasks;  /* lignes par tâche */
+  int block = (N + nb_tasks - 1) / nb_tasks;  
 
   #pragma omp parallel
   {
@@ -74,8 +74,8 @@ void mult_CSR_task(CSRMatrix_t* A, double const* x, double* y, int nb_tasks)
           }
         }
       }
-    } /* fin single — taskwait implicite */
-  } /* fin parallel */
+    } 
+  } 
 }
 
 void print_CSR(CSRMatrix_t* A)
@@ -373,3 +373,8 @@ void buildLaplacian(CSRMatrix_t* matrix,
   }
   kcol[irow] = offset ;
 }
+
+
+
+
+

@@ -19,7 +19,7 @@ int main(int argc, char** argv)
 
   #pragma omp parallel
   {
-    /* Récupérer le nombre réel de threads */
+    
     #pragma omp single
     {
       nthreads = omp_get_num_threads();
@@ -27,13 +27,11 @@ int main(int argc, char** argv)
       fprintf(stdout, "Tasks per thread : %d\n", N_TASKS_PER_THREAD);
       fprintf(stdout, "Trials per task  : %d\n", N_TRIALS_PER_TASK);
 
-      /* Chaque thread crée N_TASKS_PER_THREAD tâches via single,
-         mais on boucle nthreads * N_TASKS_PER_THREAD fois au total */
       for (int t = 0; t < nthreads * N_TASKS_PER_THREAD; t++)
       {
         #pragma omp task firstprivate(t)
         {
-          /* Graine propre à chaque tâche pour rand_r (thread-safe) */
+          
           unsigned int seed = (unsigned int)(t * 31 + 2020);
           uint64_t local_count = 0;
           double x, y;
@@ -49,8 +47,8 @@ int main(int argc, char** argv)
           count += local_count;
         }
       }
-    } /* fin single — barrière implicite + taskwait */
-  } /* fin parallel */
+    } 
+  } 
 
   t1 = omp_get_wtime();
 
