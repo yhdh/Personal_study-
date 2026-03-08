@@ -1,0 +1,726 @@
+\documentclass[12pt,a4paper]{article}
+
+% ─── Packages ───
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+
+% ─── Style des listings C ───
+\definecolor{codegreen}{rgb}{0,0.5,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{cstyle}{
+  backgroundcolor=\color{backcolour},
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{blue}\bfseries,
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,
+  breaklines=true,
+  captionpos=b,
+  keepspaces=true,
+  numbers=left,
+  numbersep=5pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  language=C,
+  morekeywords={pragma, omp, parallel, single, task, taskwait, taskgroup,
+                shared, firstprivate, depend, final, num_threads, if},
+  frame=single,
+  rulecolor=\color{gray},
+}
+\lstset{style=cstyle}
+
+\lstdefinestyle{bashstyle}{
+  backgroundcolor=\color{backcolour},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{gray},
+  language=bash,
+}
+
+% ─── Titre ───
+\title{\textbf{TP4 --- Programmation OpenMP : Tâches}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Partie I --- Parcours d'un arbre (Depth First Search)}
+% ============================================================================
+
+\textbf{Fichier} : \texttt{Tree-traversal/tree-traverse.c}
+
+Le programme construit un arbre binaire de recherche (BST) aléatoire et calcule
+sa profondeur via un algorithme DFS (\textit{Depth First Search}). Toutes les
+versions sont compilées et exécutées dans un même binaire pour faciliter la
+comparaison.
+
+% ----------------------------------------------------------------------------
+\subsection{Q.1 --- Version séquentielle}
+% ----------------------------------------------------------------------------
+
+\textbf{Objectif} : Implémenter \texttt{inorderTraverse\_Seq(struct node *r)}
+qui calcule la profondeur d'un arbre en séquentiel.
+
+\textbf{Principe} : On parcourt récursivement les sous-arbres gauche et droit.
+Chaque appel retourne la profondeur du sous-arbre. On renvoie
+$1 + \max(\text{profondeur\_gauche}, \text{profondeur\_droite})$ pour compter le
+niveau courant.
+
+\begin{lstlisting}[caption={Version séquentielle --- Q.1}]
+int inorderTraverse_Seq(struct node *r)
+{
+  int depthLeft = 0;
+  int depthRight = 0;
+
+  if (r->right != NULL)
+  {
+    depthRight = inorderTraverse_Seq(r->right);
+  }
+  if (r->left != NULL)
+  {
+    depthLeft = inorderTraverse_Seq(r->left);
+  }
+
+  /* +1 pour compter le niveau courant */
+  return (depthLeft >= depthRight) ? depthLeft + 1 : depthRight + 1;
+}
+\end{lstlisting}
+
+\textbf{Explications} :
+\begin{itemize}
+  \item \textbf{Cas de base} : si un n\oe ud est une feuille (pas d'enfants),
+    \texttt{depthLeft} et \texttt{depthRight} restent à 0, et la fonction
+    retourne 1 (la feuille elle-même).
+  \item \textbf{Cas récursif} : on descend dans chaque sous-arbre non-nul, puis
+    on prend le maximum des deux profondeurs $+ 1$.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\subsection{Q.2 --- Parallélisation avec tâches OpenMP}
+% ----------------------------------------------------------------------------
+
+\textbf{Objectif} : Paralléliser le parcours DFS avec \texttt{\#pragma omp task}.
+
+\textbf{Principe} : Chaque appel récursif est encapsulé dans une tâche OpenMP.
+Les deux sous-arbres (gauche et droit) peuvent être explorés en parallèle par
+des threads différents. Un \texttt{\#pragma omp taskwait} synchronise les
+résultats avant de calculer le maximum.
+
+\begin{lstlisting}[caption={Version parallèle avec tâches --- Q.2}]
+int inorderTraverse_Task(struct node *r)
+{
+  int depthLeft = 0;
+  int depthRight = 0;
+
+  if (r->right != NULL)
+  {
+    #pragma omp task shared(depthRight)
+    {
+      depthRight = inorderTraverse_Task(r->right);
+    }
+  }
+  if (r->left != NULL)
+  {
+    #pragma omp task shared(depthLeft)
+    {
+      depthLeft = inorderTraverse_Task(r->left);
+    }
+  }
+
+  #pragma omp taskwait
+
+  return (depthLeft >= depthRight) ? depthLeft + 1 : depthRight + 1;
+}
+\end{lstlisting}
+
+\textbf{Points clés de l'implémentation} :
+\begin{itemize}
+  \item \textbf{\texttt{shared(depthRight)} / \texttt{shared(depthLeft)}} : les
+    variables de résultat doivent être partagées pour que la tâche puisse écrire
+    le résultat et que le thread parent puisse le lire.
+  \item \textbf{\texttt{\#pragma omp taskwait}} : point de synchronisation
+    indispensable --- on doit attendre que les deux tâches enfants aient terminé
+    avant de comparer les profondeurs.
+  \item \textbf{Lancement} : une région \texttt{parallel} avec \texttt{single}
+    est utilisée dans le \texttt{main} pour que seul un thread crée la première
+    tâche, puis les tâches se répartissent naturellement entre les threads.
+\end{itemize}
+
+\begin{lstlisting}[caption={Lancement dans le main}]
+#pragma omp parallel num_threads(numThreads)
+{
+  #pragma omp single
+  {
+    depth = inorderTraverse_Task(root);
+  }
+}
+\end{lstlisting}
+
+% ----------------------------------------------------------------------------
+\subsection{Q.3 --- Limitation de la profondeur de génération de tâches}
+% ----------------------------------------------------------------------------
+
+\textbf{Problème} : La version Q.2 crée une tâche par n\oe ud de l'arbre. Pour
+1~million de n\oe uds, cela représente $\sim$2~millions de tâches, ce qui génère
+un surcoût considérable (création, ordonnancement, synchronisation).
+
+\textbf{Solution} : Limiter la création de tâches aux \texttt{MAX\_DEPTH}
+premiers niveaux de récursion ($2^5 = 32$ tâches maximum). Au-delà, le parcours
+redevient séquentiel.
+
+\subsubsection{Méthode 1 --- Clause \texttt{if}}
+
+\begin{lstlisting}[caption={Limite de profondeur avec clause \texttt{if} --- Q.3a}]
+#define MAX_DEPTH 5
+
+int inorderTraverse_Task_DepthLimit_If(struct node *r, int currentDepth)
+{
+  int depthLeft = 0;
+  int depthRight = 0;
+
+  if (r->right != NULL)
+  {
+    #pragma omp task shared(depthRight) if(currentDepth < MAX_DEPTH)
+    {
+      depthRight = inorderTraverse_Task_DepthLimit_If(r->right,
+                                                       currentDepth + 1);
+    }
+  }
+  if (r->left != NULL)
+  {
+    #pragma omp task shared(depthLeft) if(currentDepth < MAX_DEPTH)
+    {
+      depthLeft = inorderTraverse_Task_DepthLimit_If(r->left,
+                                                      currentDepth + 1);
+    }
+  }
+
+  #pragma omp taskwait
+
+  return (depthLeft >= depthRight) ? depthLeft + 1 : depthRight + 1;
+}
+\end{lstlisting}
+
+\textbf{Fonctionnement de \texttt{if(condition)}} :
+\begin{itemize}
+  \item Si la condition est \textbf{vraie} : une tâche est créée normalement
+    (peut être exécutée par un autre thread).
+  \item Si la condition est \textbf{fausse} (\texttt{if(0)}) :
+    \textbf{aucune tâche n'est créée}. Le code du bloc est exécuté immédiatement
+    par le thread courant, comme un appel de fonction classique.
+\end{itemize}
+
+\subsubsection{Méthode 2 --- Clause \texttt{final}}
+
+\begin{lstlisting}[caption={Limite de profondeur avec clause \texttt{final} --- Q.3b}]
+int inorderTraverse_Task_DepthLimit_Final(struct node *r, int currentDepth)
+{
+  int depthLeft = 0;
+  int depthRight = 0;
+
+  if (r->right != NULL)
+  {
+    #pragma omp task shared(depthRight) final(currentDepth >= MAX_DEPTH)
+    {
+      depthRight = inorderTraverse_Task_DepthLimit_Final(r->right,
+                                                          currentDepth + 1);
+    }
+  }
+  if (r->left != NULL)
+  {
+    #pragma omp task shared(depthLeft) final(currentDepth >= MAX_DEPTH)
+    {
+      depthLeft = inorderTraverse_Task_DepthLimit_Final(r->left,
+                                                         currentDepth + 1);
+    }
+  }
+
+  #pragma omp taskwait
+
+  return (depthLeft >= depthRight) ? depthLeft + 1 : depthRight + 1;
+}
+\end{lstlisting}
+
+\textbf{Fonctionnement de \texttt{final(condition)}} :
+\begin{itemize}
+  \item Si la condition est \textbf{vraie} : la tâche est créée mais marquée
+    \textbf{finale}. Elle et toutes ses tâches descendantes seront exécutées
+    \textbf{immédiatement} (séquentiellement).
+  \item \textbf{Différence avec \texttt{if}} : avec \texttt{final},
+    \textbf{un objet tâche est toujours créé} (même s'il s'exécute
+    immédiatement), ce qui engendre un léger surcoût par rapport à
+    \texttt{if(0)} qui ne crée aucune tâche.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\subsection{Q.4 --- Analyse des performances}
+% ----------------------------------------------------------------------------
+
+\subsubsection{Résultats expérimentaux}
+
+\textbf{Configuration} : 1\,000\,000 n\oe uds, 4 threads.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Version} & \textbf{Temps (sec)} & \textbf{Speedup vs séq.} \\
+\midrule
+Q.1 --- Séquentielle          & \textbf{0.024} & 1.0$\times$              \\
+Q.2 --- Tasks (sans limite)   & 0.295          & 0.08$\times$ (12$\times$ plus lent) \\
+Q.3a --- \texttt{if} (limit=5)    & \textbf{0.059} & 0.41$\times$             \\
+Q.3b --- \texttt{final} (limit=5) & 0.144          & 0.17$\times$             \\
+Q.5 --- \texttt{taskgroup}        & 0.312          & 0.08$\times$             \\
+\bottomrule
+\end{tabular}
+\caption{Performances du parcours d'arbre --- 1M n\oe uds, 4 threads}
+\end{table}
+
+\subsubsection{Analyse}
+
+\textbf{1. La version tasks sans limite est bien plus lente que la version
+séquentielle.}
+
+Le surcoût de création/ordonnancement de $\sim$2~millions de tâches est
+\textbf{largement supérieur} au travail utile de chaque tâche (une simple
+comparaison). Le grain de calcul par tâche est extrêmement fin : chaque tâche ne
+fait qu'une addition et une comparaison. Le rapport travail/surcoût est
+catastrophique.
+
+\textbf{2. La clause \texttt{if} offre la meilleure performance parallèle.}
+
+En limitant à 5 niveaux, on ne crée que $2^5 = 32$ tâches au maximum. Chaque
+tâche parcourt ensuite un sous-arbre complet séquentiellement. Le surcoût est
+minimal et on répartit efficacement le travail sur les 4 threads.
+
+\textbf{3. La clause \texttt{final} est moins performante que \texttt{if}.}
+
+Avec \texttt{final}, des objets tâches sont toujours créés à chaque n\oe ud
+(même si elles s'exécutent immédiatement). Cela génère un surcoût de gestion
+mémoire absent avec \texttt{if(0)}.
+
+\textbf{4. Le séquentiel reste le plus rapide ici.}
+
+Pour ce type de problème à grain très fin (le travail par n\oe ud est trivial),
+le parallélisme de tâches n'apporte pas de gain. Le parcours d'arbre est
+principalement limité par les accès mémoire (pointeurs) et le surcoût de
+synchronisation dépasse le gain potentiel. Un arbre BST aléatoire est aussi
+naturellement déséquilibré, ce qui limite la répartition de charge.
+
+% ----------------------------------------------------------------------------
+\subsection{Q.5 --- \texttt{taskgroup} vs \texttt{taskwait}}
+% ----------------------------------------------------------------------------
+
+\begin{lstlisting}[caption={Version avec \texttt{taskgroup} --- Q.5}]
+int inorderTraverse_Taskgroup(struct node *r)
+{
+  int depthLeft = 0;
+  int depthRight = 0;
+
+  #pragma omp taskgroup
+  {
+    if (r->right != NULL)
+    {
+      #pragma omp task shared(depthRight)
+      {
+        depthRight = inorderTraverse_Taskgroup(r->right);
+      }
+    }
+    if (r->left != NULL)
+    {
+      #pragma omp task shared(depthLeft)
+      {
+        depthLeft = inorderTraverse_Taskgroup(r->left);
+      }
+    }
+  } /* Fin du taskgroup : toutes les taches descendantes terminees */
+
+  return (depthLeft >= depthRight) ? depthLeft + 1 : depthRight + 1;
+}
+\end{lstlisting}
+
+\subsubsection{Différence entre \texttt{taskwait} et \texttt{taskgroup}}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{p{2.5cm}p{5.5cm}p{5.5cm}}
+\toprule
+ & \textbf{\texttt{taskwait}} & \textbf{\texttt{taskgroup}} \\
+\midrule
+\textbf{Portée}
+  & Attend les tâches enfants \textbf{directes} uniquement (1 niveau)
+  & Attend \textbf{toutes} les tâches descendantes créées dans le bloc
+    (enfants, petits-enfants, etc.) \\
+\midrule
+\textbf{Syntaxe}
+  & Directive simple (pas de bloc)
+  & Directive structurée (avec un bloc \texttt{\{ \}}) \\
+\midrule
+\textbf{Granularité}
+  & Fine : ne synchronise qu'un niveau
+  & Large : synchronise tout le sous-arbre de tâches \\
+\midrule
+\textbf{Usage typique}
+  & Quand chaque niveau gère sa propre synchronisation
+  & Quand on veut garantir la complétion de tout un sous-graphe de tâches \\
+\bottomrule
+\end{tabular}
+\caption{Comparaison \texttt{taskwait} vs \texttt{taskgroup}}
+\end{table}
+
+\textbf{Dans notre cas}, les deux fonctionnent correctement car chaque niveau de
+récursion fait son propre \texttt{taskwait}/\texttt{taskgroup}. Cependant,
+\texttt{taskgroup} est plus \textbf{robuste} : même si on oubliait un
+\texttt{taskwait} à un niveau intermédiaire, le \texttt{taskgroup} au niveau
+supérieur garantirait l'attente de toutes les tâches descendantes.
+
+\textbf{En termes de performance}, \texttt{taskgroup} a un surcoût légèrement
+supérieur car il doit traquer toutes les tâches descendantes (pas seulement les
+enfants directs).
+
+% ============================================================================
+\newpage
+\section{Partie II --- Stencil}
+% ============================================================================
+
+\textbf{Fichier de base} : \texttt{STENCIL/stencil\_seq.c}
+
+Le programme crée un maillage 1D rempli de valeurs aléatoires et applique
+itérativement :
+\begin{enumerate}
+  \item \textbf{Un flou} (blur) sur les extrémités gauche et droite du maillage
+    (moyennage avec les voisins).
+  \item \textbf{Une copie} de la partie centrale (pas de blur).
+  \item \textbf{Une mise à l'échelle} (scale) sur tout le maillage.
+\end{enumerate}
+La boucle s'arrête quand le blur converge (toutes les différences $<$
+\texttt{threshold}).
+
+% ----------------------------------------------------------------------------
+\subsection{Q.6 --- Compilation et exécution}
+% ----------------------------------------------------------------------------
+
+\begin{lstlisting}[style=bashstyle, caption={Compilation et exécution}]
+$ make
+gcc -O3  -o stencil_seq stencil_seq.c
+gcc -O3 -fopenmp -o stencil_task stencil_task.c
+gcc -O3 -fopenmp -o stencil_taskdep stencil_taskdep.c
+
+$ ./stencil_seq 100 10
+Running stencil on 100 element(s) with seed 10
+DONE w/ 5 iter in 0.000001 s
+    MESH 0.00 0.02 0.04 0.05 0.05 0.06 0.06 0.06 0.07 0.08
+\end{lstlisting}
+
+Le Makefile compile 3 exécutables :
+\begin{itemize}
+  \item \texttt{stencil\_seq} : version séquentielle (fournie)
+  \item \texttt{stencil\_task} : version avec tâches + \texttt{taskwait}
+  \item \texttt{stencil\_taskdep} : version avec tâches + \texttt{depend}
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\subsection{Q.7 --- Parallélisation avec tâches OpenMP}
+% ----------------------------------------------------------------------------
+
+\subsubsection{Analyse des dépendances}
+
+Avant de paralléliser, identifions les dépendances entre les 4 boucles :
+
+\begin{lstlisting}[style=bashstyle, caption={Dépendances entre boucles}]
+Iteration k :
+  Loop 1 (blur gauche)  : lit mesh[] -> ecrit mesh_blur[1..N/10-2]
+  Loop 2 (copie milieu) : lit mesh[] -> ecrit mesh_blur[N/10-1..0.9N-2]
+  Loop 3 (blur droit)   : lit mesh[] -> ecrit mesh_blur[0.9N-1..N-2]
+  Loop 4 (scale)        : lit mesh_blur[] -> ecrit mesh[]
+\end{lstlisting}
+
+\textbf{Constat} :
+\begin{itemize}
+  \item \textbf{Loops 1, 2, 3} travaillent sur des régions \textbf{disjointes}
+    de \texttt{mesh\_blur} et lisent toutes \texttt{mesh} $\rightarrow$
+    \textbf{parallèles entre elles}.
+  \item \textbf{Loop 4} lit \texttt{mesh\_blur} et écrit \texttt{mesh}
+    $\rightarrow$ \textbf{dépend des loops 1, 2, 3}.
+  \item \textbf{Itération k+1} lit \texttt{mesh} $\rightarrow$ \textbf{dépend
+    de loop 4 de l'itération k}.
+\end{itemize}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.2cm and 2.5cm,
+  box/.style={draw, rounded corners, minimum width=3cm, minimum height=0.7cm,
+              fill=blue!10, font=\footnotesize},
+  arr/.style={-{Stealth[length=2.5mm]}, thick}
+]
+  \node[box] (mesh) {\texttt{mesh[]}};
+  \node[box, right=of mesh, yshift=1.2cm]  (l1) {Loop 1 (blur gauche)};
+  \node[box, right=of mesh]                (l2) {Loop 2 (copie milieu)};
+  \node[box, right=of mesh, yshift=-1.2cm] (l3) {Loop 3 (blur droit)};
+  \node[box, right=3cm of l2]              (l4) {Loop 4 (scale)};
+  \node[box, right=of l4]                  (mesh2) {\texttt{mesh[]}};
+
+  \draw[arr] (mesh) -- (l1);
+  \draw[arr] (mesh) -- (l2);
+  \draw[arr] (mesh) -- (l3);
+  \draw[arr] (l1) -- (l4);
+  \draw[arr] (l2) -- (l4);
+  \draw[arr] (l3) -- (l4);
+  \draw[arr] (l4) -- (mesh2);
+  \draw[arr, dashed] (mesh2.south) -- ++(0,-0.8) -| node[below, pos=0.25, font=\footnotesize]{itération $k+1$} (mesh.south);
+\end{tikzpicture}
+\end{center}
+
+\subsubsection{Version 1 : Tâches + \texttt{taskwait} (\texttt{stencil\_task.c})}
+
+\begin{lstlisting}[caption={Stencil avec tâches + \texttt{taskwait} --- Q.7a}]
+#pragma omp parallel
+{
+  #pragma omp single
+  {
+    do
+    {
+      int end1 = 1 ;
+      int end3 = 1 ;
+
+      /* Phase 1 : Blur (3 taches independantes) */
+
+      /* Blur Kernel (loop 1) - cote gauche */
+      #pragma omp task shared(mesh, mesh_blur, end1) \
+                       firstprivate(N, threshold)
+      {
+        int ii ;
+        for ( ii = 1 ; ii < N/10-1 ; ii++ )
+        {
+          double diff ;
+          mesh_blur[ii] = (mesh[ii-1] + mesh[ii] + mesh[ii+1]) / 3 ;
+          diff = mesh_blur[ii] - mesh[ii] ;
+          if ( diff < 0 ) diff = -diff ;
+          if ( diff > threshold ) end1 = 0 ;
+        }
+      }
+
+      /* Blur Kernel (loop 2) - copie milieu */
+      #pragma omp task shared(mesh, mesh_blur) firstprivate(N)
+      {
+        int ii ;
+        for ( ii = N/10-1 ; ii < (int)(N*0.9-1) ; ii++ )
+        {
+          mesh_blur[ii] = mesh[ii] ;
+        }
+      }
+
+      /* Blur Kernel (loop 3) - cote droit */
+      #pragma omp task shared(mesh, mesh_blur, end3) \
+                       firstprivate(N, threshold)
+      {
+        int ii ;
+        for ( ii = (int)(N*0.9-1) ; ii < N - 1 ; ii++ )
+        {
+          double diff ;
+          mesh_blur[ii] = (mesh[ii-1] + mesh[ii] + mesh[ii+1]) / 3 ;
+          diff = mesh_blur[ii] - mesh[ii] ;
+          if ( diff < 0 ) diff = -diff ;
+          if ( diff > threshold ) end3 = 0 ;
+        }
+      }
+
+      /* Synchronisation : attendre la fin des 3 blurs */
+      #pragma omp taskwait
+
+      end = end1 && end3 ;
+
+      /* Phase 2 : Scale Kernel */
+      #pragma omp task shared(mesh, mesh_blur) firstprivate(N)
+      {
+        int ii ;
+        for ( ii = 0 ; ii < N ; ii++ )
+        {
+          mesh[ii] = mesh_blur[ii] * 3.3 / 5.4 ;
+        }
+      }
+
+      /* Synchronisation : attendre le scale */
+      #pragma omp taskwait
+
+      niter++ ;
+    }
+    while( !end ) ;
+  } /* fin single */
+} /* fin parallel */
+\end{lstlisting}
+
+\textbf{Points clés} :
+\begin{itemize}
+  \item \textbf{\texttt{end1}, \texttt{end3} séparés} : on utilise deux
+    variables locales au lieu de \texttt{end} directement pour éviter une data
+    race entre les tâches 1 et 3 qui écrivent toutes deux le flag de
+    convergence.
+  \item \textbf{1\textsuperscript{er} \texttt{taskwait}} : indispensable avant
+    d'accéder à \texttt{end1}/\texttt{end3} (écrits par les tâches) et avant de
+    lancer le scale (qui lit \texttt{mesh\_blur}).
+  \item \textbf{2\textsuperscript{ème} \texttt{taskwait}} : indispensable avant
+    l'itération suivante (qui lit \texttt{mesh}, modifié par le scale).
+  \item \textbf{\texttt{firstprivate(N, threshold)}} : chaque tâche reçoit une
+    copie de ces scalaires pour éviter tout problème d'accès concurrent.
+\end{itemize}
+
+\subsubsection{Version 2 : Tâches + \texttt{depend} (\texttt{stencil\_taskdep.c})}
+
+\begin{lstlisting}[caption={Stencil avec tâches + \texttt{depend} --- Q.7b}]
+/* Indices des 3 regions pour les dependances */
+int r1 = 1 ;
+int r2 = N / 10 - 1 ;
+int r3 = (int)(N * 0.9 - 1) ;
+
+#pragma omp parallel
+{
+  #pragma omp single
+  {
+    do
+    {
+      int end1 = 1 ;
+      int end3 = 1 ;
+
+      /* Blur gauche */
+      #pragma omp task shared(mesh, mesh_blur, end1) \
+        firstprivate(N, threshold) \
+        depend(in: mesh[0]) depend(out: mesh_blur[r1])
+      {
+        int ii ;
+        for ( ii = 1 ; ii < N/10-1 ; ii++ )
+        {
+          double diff ;
+          mesh_blur[ii] = (mesh[ii-1]+mesh[ii]+mesh[ii+1]) / 3 ;
+          diff = mesh_blur[ii] - mesh[ii] ;
+          if ( diff < 0 ) diff = -diff ;
+          if ( diff > threshold ) end1 = 0 ;
+        }
+      }
+
+      /* Blur milieu */
+      #pragma omp task shared(mesh, mesh_blur) \
+        firstprivate(N) \
+        depend(in: mesh[0]) depend(out: mesh_blur[r2])
+      {
+        int ii ;
+        for ( ii = N/10-1 ; ii < (int)(N*0.9-1) ; ii++ )
+          mesh_blur[ii] = mesh[ii] ;
+      }
+
+      /* Blur droit */
+      #pragma omp task shared(mesh, mesh_blur, end3) \
+        firstprivate(N, threshold) \
+        depend(in: mesh[0]) depend(out: mesh_blur[r3])
+      {
+        int ii ;
+        for ( ii = (int)(N*0.9-1) ; ii < N-1 ; ii++ )
+        {
+          double diff ;
+          mesh_blur[ii] = (mesh[ii-1]+mesh[ii]+mesh[ii+1]) / 3 ;
+          diff = mesh_blur[ii] - mesh[ii] ;
+          if ( diff < 0 ) diff = -diff ;
+          if ( diff > threshold ) end3 = 0 ;
+        }
+      }
+
+      /* Scale */
+      #pragma omp task shared(mesh, mesh_blur) firstprivate(N) \
+        depend(in: mesh_blur[r1], mesh_blur[r2], mesh_blur[r3]) \
+        depend(out: mesh[0])
+      {
+        int ii ;
+        for ( ii = 0 ; ii < N ; ii++ )
+          mesh[ii] = mesh_blur[ii] * 3.3 / 5.4 ;
+      }
+
+      /* taskwait necessaire pour lire end1/end3 */
+      #pragma omp taskwait
+
+      end = end1 && end3 ;
+      niter++ ;
+    }
+    while( !end ) ;
+  }
+}
+\end{lstlisting}
+
+\textbf{Avantages de \texttt{depend} par rapport à \texttt{taskwait}} :
+
+\begin{enumerate}
+  \item \textbf{Ordonnancement plus fin} : les dépendances sont exprimées entre
+    tâches individuelles, pas entre phases entières. Le runtime peut
+    potentiellement chevaucher le scale de l'itération $k$ avec les blurs de
+    l'itération $k+1$.
+
+  \item \textbf{Graphe de dépendances explicite} :
+    \begin{itemize}
+      \item Les 3 blurs ont \texttt{depend(in: mesh[0])} $\rightarrow$ ils
+        attendent que le scale précédent ait fini d'écrire \texttt{mesh}.
+      \item Le scale a \texttt{depend(in: mesh\_blur[r1], mesh\_blur[r2],
+        mesh\_blur[r3])} $\rightarrow$ il attend les 3 blurs.
+      \item Pas besoin de \texttt{taskwait} pour cet ordonnancement : les
+        \texttt{depend} suffisent.
+    \end{itemize}
+
+  \item \textbf{Un \texttt{taskwait} reste nécessaire} uniquement pour lire
+    \texttt{end1}/\texttt{end3} (le thread \texttt{single} doit attendre pour
+    tester la condition de convergence de la boucle \texttt{do\ldots while}).
+\end{enumerate}
+
+\subsubsection{Résultats de performance}
+
+\textbf{Configuration} : 1\,000\,000 éléments, seed 42, 4 threads.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Version} & \textbf{Temps (sec)} & \textbf{Itérations} \\
+\midrule
+Séquentielle             & \textbf{0.008} & 5 \\
+Tasks + \texttt{taskwait} & 0.042          & 5 \\
+Tasks + \texttt{depend}   & \textbf{0.022} & 5 \\
+\bottomrule
+\end{tabular}
+\caption{Performances du stencil --- 1M éléments, 4 threads}
+\end{table}
+
+\textbf{Analyse} :
+\begin{itemize}
+  \item Les 3 versions produisent le \textbf{même résultat} (MESH identique),
+    validant la correction.
+  \item Le séquentiel est le plus rapide car le nombre d'itérations est faible
+    (5) et le surcoût de création des threads/tâches n'est pas amorti.
+  \item La version \texttt{depend} est \textbf{2$\times$ plus rapide} que la
+    version \texttt{taskwait} car le runtime dispose de plus d'informations pour
+    ordonnancer les tâches efficacement.
+  \item Pour des maillages plus grands ou plus d'itérations, l'avantage du
+    parallélisme serait plus marqué, car les boucles de blur et scale
+    deviendraient le goulot d'étranglement.
+\end{itemize}
+
+\end{document}

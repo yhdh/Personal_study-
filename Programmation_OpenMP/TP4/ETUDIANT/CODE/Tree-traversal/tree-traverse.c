@@ -23,7 +23,21 @@ void leftNode(struct node * ,int, int );
 void rightNode(struct node * ,int, int );
 struct node *createNewNode(int,int);
 void deleteTree(struct node ** r);
+
+/* Q.1 : Version séquentielle */
+int inorderTraverse_Seq(struct node *);
+
+/* Q.2 : Version parallèle avec tasks OpenMP */
 int inorderTraverse_Task(struct node *);
+
+/* Q.3 : Version avec limite de profondeur - méthode 1 (clause if) */
+int inorderTraverse_Task_DepthLimit_If(struct node *, int);
+
+/* Q.3 : Version avec limite de profondeur - méthode 2 (clause final) */
+int inorderTraverse_Task_DepthLimit_Final(struct node *, int);
+
+/* Q.5 : Version avec taskgroup au lieu de taskwait */
+int inorderTraverse_Taskgroup(struct node *);
 
 
 /* Main Function */
@@ -71,18 +85,97 @@ int main(int argc,char **argv)
   /* Function call to create the tree */
   root = createTree();
   int depth = 0;
+  int max_depth_limit = 5; /* Q.3 : profondeur max pour la génération de tâches */
 
+  /* ============================================================ */
+  /* Q.1 : Version séquentielle                                   */
+  /* ============================================================ */
   start_time=omp_get_wtime();
-
-  depth = inorderTraverse_Task(root); // Function call to perform the tree 
-
+  depth = inorderTraverse_Seq(root);
   end_time=omp_get_wtime();
 
+  printf("\n\t\t === Q.1 : Version Séquentielle ===");
+  printf("\n\t\t Total Nodes: %ld ",totalNodes);
+  printf("\n\t\t Time Taken: %lf sec",(end_time-start_time));
+  printf("\n\t\t Depth: %d \n", depth);
+
+  /* ============================================================ */
+  /* Q.2 : Version parallèle avec tasks OpenMP                    */
+  /* ============================================================ */
+  start_time=omp_get_wtime();
+  #pragma omp parallel num_threads(numThreads)
+  {
+    #pragma omp single
+    {
+      depth = inorderTraverse_Task(root);
+    }
+  }
+  end_time=omp_get_wtime();
+
+  printf("\n\t\t === Q.2 : Version Parallèle (tasks) ===");
   printf("\n\t\t Total Nodes: %ld ",totalNodes);
   printf("\n\t\t Number of Threads: %ld ",numThreads);
-  printf("\n\t\t Time Taken ( Task Construct : OpenMp-3.0 ): %lf sec",(end_time-start_time));
-  printf("\n\t\t Depth: %d ", depth);
-  printf("\n\n\t Inorder tree traversal using Task Construct .................Done \n");
+  printf("\n\t\t Time Taken: %lf sec",(end_time-start_time));
+  printf("\n\t\t Depth: %d \n", depth);
+
+  /* ============================================================ */
+  /* Q.3a : Limite profondeur - méthode 1 (clause if)             */
+  /* ============================================================ */
+  start_time=omp_get_wtime();
+  #pragma omp parallel num_threads(numThreads)
+  {
+    #pragma omp single
+    {
+      depth = inorderTraverse_Task_DepthLimit_If(root, 0);
+    }
+  }
+  end_time=omp_get_wtime();
+
+  printf("\n\t\t === Q.3a : Limite profondeur (clause if, max=%d) ===", max_depth_limit);
+  printf("\n\t\t Total Nodes: %ld ",totalNodes);
+  printf("\n\t\t Number of Threads: %ld ",numThreads);
+  printf("\n\t\t Time Taken: %lf sec",(end_time-start_time));
+  printf("\n\t\t Depth: %d \n", depth);
+
+  /* ============================================================ */
+  /* Q.3b : Limite profondeur - méthode 2 (clause final)          */
+  /* ============================================================ */
+  start_time=omp_get_wtime();
+  #pragma omp parallel num_threads(numThreads)
+  {
+    #pragma omp single
+    {
+      depth = inorderTraverse_Task_DepthLimit_Final(root, 0);
+    }
+  }
+  end_time=omp_get_wtime();
+
+  printf("\n\t\t === Q.3b : Limite profondeur (clause final, max=%d) ===", max_depth_limit);
+  printf("\n\t\t Total Nodes: %ld ",totalNodes);
+  printf("\n\t\t Number of Threads: %ld ",numThreads);
+  printf("\n\t\t Time Taken: %lf sec",(end_time-start_time));
+  printf("\n\t\t Depth: %d \n", depth);
+
+  /* ============================================================ */
+  /* Q.5 : Version avec taskgroup                                 */
+  /* ============================================================ */
+  start_time=omp_get_wtime();
+  #pragma omp parallel num_threads(numThreads)
+  {
+    #pragma omp single
+    {
+      depth = inorderTraverse_Taskgroup(root);
+    }
+  }
+  end_time=omp_get_wtime();
+
+  printf("\n\t\t === Q.5 : Version taskgroup ===");
+  printf("\n\t\t Total Nodes: %ld ",totalNodes);
+  printf("\n\t\t Number of Threads: %ld ",numThreads);
+  printf("\n\t\t Time Taken: %lf sec",(end_time-start_time));
+  printf("\n\t\t Depth: %d \n", depth);
+
+  printf("\n\n\t Toutes les versions exécutées avec succès.\n");
 
   while(root)
   deleteTree(&root);
@@ -217,20 +310,167 @@ void rightNode(struct node *r,int value, int depth)
    r->right=createNewNode(value, depth);
 }
 
-/*
-Description :Uses OpenMP-3.0 Task Construct which is an efficient approah. 
-Whenever a thread encounters a task construct,a new explicit task, An explicit 
-task may be executed by any thread in the current team, in parallel with other 
-tasks.In this approach the several task can be executed in parallel.
-
-@param : starting pointer of the tree
-*/
-int inorderTraverse_Task(struct node *r)
+/* ================================================================
+ * Q.1 : Version séquentielle
+ * Parcours DFS classique : on descend récursivement à gauche et à
+ * droite, et on renvoie 1 + max(profondeur gauche, profondeur droite).
+ * ================================================================ */
+int inorderTraverse_Seq(struct node *r)
 {
-  int depth = 0;
-  return depth;
+  int depthLeft = 0;
+  int depthRight = 0;
+
+  if (r->right != NULL)
+  {
+    depthRight = inorderTraverse_Seq(r->right);
+  }
+  if (r->left != NULL)
+  {
+    depthLeft = inorderTraverse_Seq(r->left);
+  }
+
+  /* +1 pour compter le niveau courant */
+  return (depthLeft >= depthRight) ? depthLeft + 1 : depthRight + 1;
 }
 
+/* ================================================================
+ * Q.2 : Version parallèle avec tâches OpenMP
+ * Chaque appel récursif est encapsulé dans une tâche OpenMP.
+ * Le taskwait synchronise les deux sous-arbres avant de
+ * renvoyer le max.
+ * ================================================================ */
+int inorderTraverse_Task(struct node *r)
+{
+  int depthLeft = 0;
+  int depthRight = 0;
+
+  if (r->right != NULL)
+  {
+    #pragma omp task shared(depthRight)
+    {
+      depthRight = inorderTraverse_Task(r->right);
+    }
+  }
+  if (r->left != NULL)
+  {
+    #pragma omp task shared(depthLeft)
+    {
+      depthLeft = inorderTraverse_Task(r->left);
+    }
+  }
+
+  #pragma omp taskwait
+
+  return (depthLeft >= depthRight) ? depthLeft + 1 : depthRight + 1;
+}
+
+/* ================================================================
+ * Q.3 – Méthode 1 : clause "if"
+ * On ne crée des tâches que si la profondeur courante est < MAX_DEPTH.
+ * Au-delà, la clause if(0) fait que le code s'exécute en séquentiel
+ * dans le thread courant (pas de création de tâche).
+ * ================================================================ */
+#define MAX_DEPTH 5
+
+int inorderTraverse_Task_DepthLimit_If(struct node *r, int currentDepth)
+{
+  int depthLeft = 0;
+  int depthRight = 0;
+
+  if (r->right != NULL)
+  {
+    #pragma omp task shared(depthRight) if(currentDepth < MAX_DEPTH)
+    {
+      depthRight = inorderTraverse_Task_DepthLimit_If(r->right, currentDepth + 1);
+    }
+  }
+  if (r->left != NULL)
+  {
+    #pragma omp task shared(depthLeft) if(currentDepth < MAX_DEPTH)
+    {
+      depthLeft = inorderTraverse_Task_DepthLimit_If(r->left, currentDepth + 1);
+    }
+  }
+
+  #pragma omp taskwait
+
+  return (depthLeft >= depthRight) ? depthLeft + 1 : depthRight + 1;
+}
+
+/* ================================================================
+ * Q.3 – Méthode 2 : clause "final"
+ * La clause final fait que, une fois la profondeur MAX_DEPTH atteinte,
+ * toutes les tâches enfants deviennent "final" et s'exécutent
+ * immédiatement (comme en séquentiel). La différence avec if :
+ * - if(0) : le code s'exécute dans le thread courant, pas de tâche
+ * - final : une tâche est toujours créée, mais elle et ses descendantes
+ *   sont marquées "final" et exécutées immédiatement.
+ * ================================================================ */
+int inorderTraverse_Task_DepthLimit_Final(struct node *r, int currentDepth)
+{
+  int depthLeft = 0;
+  int depthRight = 0;
+
+  if (r->right != NULL)
+  {
+    #pragma omp task shared(depthRight) final(currentDepth >= MAX_DEPTH)
+    {
+      depthRight = inorderTraverse_Task_DepthLimit_Final(r->right, currentDepth + 1);
+    }
+  }
+  if (r->left != NULL)
+  {
+    #pragma omp task shared(depthLeft) final(currentDepth >= MAX_DEPTH)
+    {
+      depthLeft = inorderTraverse_Task_DepthLimit_Final(r->left, currentDepth + 1);
+    }
+  }
+
+  #pragma omp taskwait
+
+  return (depthLeft >= depthRight) ? depthLeft + 1 : depthRight + 1;
+}
+
+/* ================================================================
+ * Q.5 : Version avec taskgroup au lieu de taskwait
+ *
+ * Différence taskwait vs taskgroup :
+ * - taskwait : attend uniquement les tâches enfants DIRECTES du
+ *   thread courant (1 seul niveau de profondeur).
+ * - taskgroup : attend TOUTES les tâches créées dans le bloc
+ *   taskgroup, y compris les tâches descendants (petits-enfants,
+ *   arrière-petits-enfants, etc.).
+ *
+ * Ici taskgroup garantit que tout le sous-arbre est terminé
+ * avant de calculer le max. C'est plus robuste car on n'a
+ * pas besoin de s'assurer que chaque niveau fait son propre
+ * taskwait.
+ * ================================================================ */
+int inorderTraverse_Taskgroup(struct node *r)
+{
+  int depthLeft = 0;
+  int depthRight = 0;
+
+  #pragma omp taskgroup
+  {
+    if (r->right != NULL)
+    {
+      #pragma omp task shared(depthRight)
+      {
+        depthRight = inorderTraverse_Taskgroup(r->right);
+      }
+    }
+    if (r->left != NULL)
+    {
+      #pragma omp task shared(depthLeft)
+      {
+        depthLeft = inorderTraverse_Taskgroup(r->left);
+      }
+    }
+  } /* Fin du taskgroup : toutes les tâches descendantes sont terminées */
+
+  return (depthLeft >= depthRight) ? depthLeft + 1 : depthRight + 1;
+}
 /* Description : Function to delete the Binary Search tree
 */
 void deleteTree(struct node ** r)
